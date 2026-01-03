@@ -8,6 +8,8 @@ import Showroom from "./pages/Showroom";
 import Collections from "./pages/Collections";
 import SetDetail from "./pages/SetDetail";
 import Shortlist from "./pages/Shortlist";
+import Auth from "./pages/Auth";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +26,8 @@ const App = () => (
           <Route path="/collections" element={<Collections />} />
           <Route path="/set/:id" element={<SetDetail />} />
           <Route path="/shortlist" element={<Shortlist />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/admin" element={<Admin />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
