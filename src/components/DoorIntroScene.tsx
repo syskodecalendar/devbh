@@ -166,12 +166,19 @@ const DoorIntroScene = ({ onEnter }: DoorIntroSceneProps) => {
   const [showContent, setShowContent] = useState(true);
   const [zoomPhase, setZoomPhase] = useState<"idle" | "zoom" | "enter">("idle");
   const [showBurst, setShowBurst] = useState(false);
+  const [shake, setShake] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleEnter = () => {
     setShowBurst(true);
     setIsOpening(true);
     setZoomPhase("zoom");
+    
+    // Trigger camera shake when doors start opening
+    setTimeout(() => {
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
+    }, 200);
     
     // Start zoom after doors open
     setTimeout(() => {
@@ -196,7 +203,11 @@ const DoorIntroScene = ({ onEnter }: DoorIntroSceneProps) => {
           }}
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.5 }}
+          animate={shake ? {
+            x: [0, -3, 3, -2, 2, -1, 1, 0],
+            y: [0, 2, -2, 1, -1, 0],
+          } : {}}
+          transition={shake ? { duration: 0.5, ease: "easeOut" } : { duration: 0.5 }}
         >
           {/* WebGL Gradient Mesh Background */}
           <Suspense fallback={null}>
