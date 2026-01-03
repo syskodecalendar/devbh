@@ -42,7 +42,7 @@ const SetCard = ({ set, index = 0, featured = false }: SetCardProps) => {
       onClick={() => navigate(`/set/${set.id}`)}
     >
       {/* Image container */}
-      <div className="relative h-2/3 overflow-hidden bg-gradient-to-b from-muted/30 to-muted/50">
+      <div className="relative h-2/3 overflow-hidden bg-card">
         <motion.div
           className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-card z-10"
           initial={{ opacity: 0 }}

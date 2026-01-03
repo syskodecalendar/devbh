@@ -1,14 +1,20 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, Menu, X } from "lucide-react";
+import { Heart, Menu, X, Home } from "lucide-react";
 import { useState } from "react";
 import { useStore } from "@/store/useStore";
 import { Button } from "@/components/ui/button";
 
 const Header = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { shortlist } = useStore();
+  const { shortlist, setHasEnteredShowroom } = useStore();
+
+  const handleHomeClick = () => {
+    setHasEnteredShowroom(false);
+    navigate("/");
+  };
 
   const navItems = [
     { path: "/showroom", label: "Showroom" },
@@ -59,7 +65,18 @@ const Header = () => {
         </nav>
 
         {/* Actions */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          {/* Home button - resets to door experience */}
+          <motion.button
+            onClick={handleHomeClick}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            className="p-2 rounded-full border border-border/50 hover:border-primary/50 transition-colors duration-300"
+            title="Return to entrance"
+          >
+            <Home className="w-5 h-5 text-muted-foreground hover:text-primary transition-colors" />
+          </motion.button>
+
           <Link to="/shortlist" className="relative">
             <motion.div
               whileHover={{ scale: 1.1 }}
