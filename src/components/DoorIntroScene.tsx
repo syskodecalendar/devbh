@@ -2,7 +2,6 @@ import { motion } from "framer-motion";
 import { useEffect, useState, useRef, Suspense, useCallback } from "react";
 import devjiLogo from "@/assets/devji-logo.png";
 import GradientMeshBackground from "./GradientMeshBackground";
-import { playSparkleSound } from "@/lib/sounds";
 
 interface GoldParticle {
   id: number;
@@ -329,8 +328,6 @@ const DoorIntroScene = ({ onEnter }: DoorIntroSceneProps) => {
   }, []);
 
   const handleEnter = () => {
-    playSparkleSound();
-    
     setShowBurst(true);
     setIsOpening(true);
     setZoomPhase("zoom");
