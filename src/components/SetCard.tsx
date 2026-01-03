@@ -53,6 +53,7 @@ const SetCard = ({ set, index = 0, featured = false }: SetCardProps) => {
           src={set.coverImage}
           alt={set.name}
           className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105 p-2"
+          style={{ mixBlendMode: "multiply" }}
         />
         
         {/* Shortlist button */}
