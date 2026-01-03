@@ -10,10 +10,8 @@ import devjiLogo from "@/assets/devji-logo.png";
 
 const Auth = () => {
   const navigate = useNavigate();
-  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -39,27 +37,12 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
-        toast.success("Welcome back!");
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/admin`,
-            data: {
-              full_name: fullName,
-            },
-          },
-        });
-        if (error) throw error;
-        toast.success("Account created successfully!");
-      }
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) throw error;
+      toast.success("Welcome back!");
     } catch (error: any) {
       toast.error(error.message || "An error occurred");
     } finally {
@@ -82,31 +65,14 @@ const Auth = () => {
             className="h-16 mx-auto mb-4 brightness-0 invert"
           />
           <h1 className="text-2xl font-serif text-foreground">
-            {isLogin ? "Admin Login" : "Create Account"}
+            Staff Login
           </h1>
           <p className="text-muted-foreground text-sm mt-2">
-            {isLogin
-              ? "Sign in to manage your jewelry collection"
-              : "Create an account to get started"}
+            Sign in to manage your jewelry collection
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {!isLogin && (
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
-              <Input
-                id="fullName"
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Enter your full name"
-                required={!isLogin}
-                className="bg-secondary border-border"
-              />
-            </div>
-          )}
-
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -140,21 +106,9 @@ const Auth = () => {
             className="w-full"
             disabled={loading}
           >
-            {loading ? "Please wait..." : isLogin ? "Sign In" : "Create Account"}
+            {loading ? "Please wait..." : "Sign In"}
           </Button>
         </form>
-
-        <div className="mt-6 text-center">
-          <button
-            type="button"
-            onClick={() => setIsLogin(!isLogin)}
-            className="text-primary hover:text-primary/80 text-sm transition-colors"
-          >
-            {isLogin
-              ? "Don't have an account? Sign up"
-              : "Already have an account? Sign in"}
-          </button>
-        </div>
       </motion.div>
     </div>
   );
