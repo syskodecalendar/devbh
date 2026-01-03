@@ -31,13 +31,26 @@ const TryOnModal = ({ open, onClose, setName }: TryOnModalProps) => {
   // Start camera
   const startCamera = useCallback(async () => {
     try {
+      // Stop any existing stream first
+      if (cameraStream) {
+        cameraStream.getTracks().forEach((track) => track.stop());
+      }
+      
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: 640, height: 480 },
+        video: { 
+          facingMode: "user", 
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+          frameRate: { ideal: 30 }
+        },
       });
-      setCameraStream(stream);
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        // Wait for video to be ready before setting state
+        await videoRef.current.play();
       }
+      setCameraStream(stream);
     } catch (err) {
       toast.error("Camera access denied", {
         description: "Please allow camera access or use photo upload mode.",
@@ -193,7 +206,10 @@ const TryOnModal = ({ open, onClose, setName }: TryOnModalProps) => {
                     playsInline
                     muted
                     className="w-full h-full object-cover"
-                    style={{ transform: "scaleX(-1)" }}
+                    style={{ 
+                      transform: "scaleX(-1)",
+                      WebkitTransform: "scaleX(-1)"
+                    }}
                   />
                   {/* Necklace overlay */}
                   <div
