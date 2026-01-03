@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import QuoteModal from "@/components/QuoteModal";
 import TryOnModal from "@/components/TryOnModal";
 import FullscreenGallery from "@/components/FullscreenGallery";
+import { getDemoMedia } from "@/lib/demoImages";
 
 const SetDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -74,13 +75,16 @@ const SetDetail = () => {
   const allImages: string[] = [];
   const allVideos: string[] = [];
 
+  // Get demo media as fallback
+  const demoMedia = getDemoMedia(set.slug);
+
   // Add cover image first if exists
   if (set.cover_image) {
     allImages.push(set.cover_image);
   }
 
-  // Add media items
-  if (set.media) {
+  // Add media items from database
+  if (set.media && set.media.length > 0) {
     set.media.forEach((m) => {
       if (m.type === "video") {
         allVideos.push(m.url);
@@ -90,7 +94,17 @@ const SetDetail = () => {
     });
   }
 
-  // Fallback if no images
+  // If no images from database, use demo images
+  if (allImages.length === 0 && demoMedia) {
+    allImages.push(...demoMedia.images);
+  }
+
+  // If no videos from database, use demo videos
+  if (allVideos.length === 0 && demoMedia) {
+    allVideos.push(...demoMedia.videos);
+  }
+
+  // Final fallback if still no images
   if (allImages.length === 0) {
     allImages.push("/placeholder.svg");
   }

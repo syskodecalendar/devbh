@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { JewelrySetDB, calculateSetPrice } from "@/hooks/useJewelrySets";
 import { useStore } from "@/store/useStore";
 import { toast } from "sonner";
-
+import { getDemoCoverImage } from "@/lib/demoImages";
 interface SetCardDBProps {
   set: JewelrySetDB;
   index?: number;
@@ -30,7 +30,8 @@ const SetCardDB = ({ set, index = 0, featured = false }: SetCardDBProps) => {
     }
   };
 
-  const coverImage = set.cover_image || "/placeholder.svg";
+  // Use database cover image, then fall back to demo image, then placeholder
+  const coverImage = set.cover_image || getDemoCoverImage(set.slug) || "/placeholder.svg";
 
   return (
     <motion.div
