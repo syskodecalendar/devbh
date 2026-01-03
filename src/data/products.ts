@@ -1,3 +1,7 @@
+import rubyRoyaleNecklace from "@/assets/jewelry/ruby-royale-necklace.jpg";
+import rubyRoyaleModel from "@/assets/jewelry/ruby-royale-model.png";
+import rubyRoyaleVideo from "@/assets/jewelry/ruby-royale-video.mp4";
+
 export interface JewelrySet {
   id: string;
   name: string;
@@ -49,21 +53,21 @@ export const diamondQualities: DiamondQuality[] = [
 export const jewelrySets: JewelrySet[] = [
   {
     id: "ruby-royale",
-    name: "Ruby Royale",
-    description: "An exquisite bridal set featuring handcrafted 22K gold adorned with natural Burmese rubies and brilliant-cut diamonds. The intricate kundan work showcases centuries-old craftsmanship passed down through generations. Perfect for the bride who desires timeless elegance with a touch of royal heritage.",
-    shortDescription: "22K Gold with Burmese rubies and diamonds",
-    coverImage: "/placeholder.svg",
-    galleryImages: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg", "/placeholder.svg"],
-    galleryVideos: [],
-    goldPurity: "22K",
-    goldWeightGrams: 185,
-    sku: "DV-RR-2024-001",
+    name: "Diamond Cascade",
+    description: "An exquisite diamond necklace featuring brilliant-cut and baguette diamonds in a cascading three-row design. The intricate pattern showcases exceptional craftsmanship with mixed-cut stones creating a mesmerizing river of light. Perfect for the bride who desires timeless elegance.",
+    shortDescription: "18K White Gold with brilliant-cut diamonds",
+    coverImage: rubyRoyaleNecklace,
+    galleryImages: [rubyRoyaleModel, rubyRoyaleNecklace],
+    galleryVideos: [rubyRoyaleVideo],
+    goldPurity: "18K",
+    goldWeightGrams: 85,
+    sku: "DV-DC-2024-001",
     hasDiamond: true,
-    diamondBaseBHD: 2500,
-    baseGoldPriceBHD: 12500,
-    makingChargeBHD: 1800,
-    stoneDetails: "Natural Burmese Rubies (12.5 carats total), Brilliant Cut Diamonds (4.2 carats)",
-    collection: "Royal Heritage",
+    diamondBaseBHD: 8500,
+    baseGoldPriceBHD: 5500,
+    makingChargeBHD: 2800,
+    stoneDetails: "Brilliant Cut Diamonds (6.8 carats), Baguette Diamonds (4.2 carats)",
+    collection: "Diamond Luxe",
     isFeatured: true,
   },
   {
