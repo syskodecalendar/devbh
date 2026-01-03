@@ -87,6 +87,76 @@ const LightRays = () => {
   );
 };
 
+// Sparkle burst effect
+interface BurstParticle {
+  id: number;
+  angle: number;
+  distance: number;
+  size: number;
+  duration: number;
+  delay: number;
+}
+
+const SparkleBurst = ({ isActive }: { isActive: boolean }) => {
+  const particles: BurstParticle[] = Array.from({ length: 40 }, (_, i) => ({
+    id: i,
+    angle: (i / 40) * 360 + Math.random() * 20,
+    distance: 150 + Math.random() * 200,
+    size: Math.random() * 8 + 4,
+    duration: 0.8 + Math.random() * 0.4,
+    delay: Math.random() * 0.15,
+  }));
+
+  if (!isActive) return null;
+
+  return (
+    <div className="absolute bottom-16 md:bottom-20 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
+      {particles.map((particle) => {
+        const radians = (particle.angle * Math.PI) / 180;
+        const x = Math.cos(radians) * particle.distance;
+        const y = Math.sin(radians) * particle.distance;
+
+        return (
+          <motion.div
+            key={particle.id}
+            className="absolute rounded-full"
+            style={{
+              width: particle.size,
+              height: particle.size,
+              left: 0,
+              top: 0,
+              background: `radial-gradient(circle, hsl(43 70% 65%) 0%, hsl(43 65% 53%) 50%, transparent 100%)`,
+              boxShadow: `0 0 ${particle.size * 2}px hsl(43 65% 53% / 0.8)`,
+            }}
+            initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
+            animate={{
+              x: x,
+              y: y,
+              opacity: [1, 1, 0],
+              scale: [1, 1.5, 0],
+            }}
+            transition={{
+              duration: particle.duration,
+              delay: particle.delay,
+              ease: "easeOut",
+            }}
+          />
+        );
+      })}
+      {/* Central flash */}
+      <motion.div
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-full"
+        style={{
+          background: "radial-gradient(circle, hsl(43 70% 65% / 0.6) 0%, transparent 70%)",
+        }}
+        initial={{ scale: 0, opacity: 1 }}
+        animate={{ scale: 3, opacity: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+      />
+    </div>
+  );
+};
+
 interface DoorIntroSceneProps {
   onEnter: () => void;
 }
@@ -95,9 +165,11 @@ const DoorIntroScene = ({ onEnter }: DoorIntroSceneProps) => {
   const [isOpening, setIsOpening] = useState(false);
   const [showContent, setShowContent] = useState(true);
   const [zoomPhase, setZoomPhase] = useState<"idle" | "zoom" | "enter">("idle");
+  const [showBurst, setShowBurst] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleEnter = () => {
+    setShowBurst(true);
     setIsOpening(true);
     setZoomPhase("zoom");
     
@@ -387,6 +459,9 @@ const DoorIntroScene = ({ onEnter }: DoorIntroSceneProps) => {
               />
             </motion.button>
           </motion.div>
+
+          {/* Sparkle Burst Effect */}
+          <SparkleBurst isActive={showBurst} />
 
           {/* Bottom tagline */}
           <motion.p
