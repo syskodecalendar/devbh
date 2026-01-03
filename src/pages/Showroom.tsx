@@ -1,13 +1,13 @@
 import { motion } from "framer-motion";
 import Header from "@/components/Header";
-import SetCard from "@/components/SetCard";
-import { getFeaturedSets } from "@/data/products";
+import SetCardDB from "@/components/SetCardDB";
+import { useFeaturedSets } from "@/hooks/useJewelrySets";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles } from "lucide-react";
 
 const Showroom = () => {
-  const featuredSets = getFeaturedSets();
+  const { data: featuredSets, isLoading } = useFeaturedSets();
 
   return (
     <div className="min-h-screen bg-velvet">
@@ -72,11 +72,21 @@ const Showroom = () => {
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-            {featuredSets.map((set, index) => (
-              <SetCard key={set.id} set={set} index={index} featured />
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
+            </div>
+          ) : featuredSets && featuredSets.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+              {featuredSets.map((set, index) => (
+                <SetCardDB key={set.id} set={set} index={index} featured />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-20">
+              <p className="text-muted-foreground">No featured collections yet. Check back soon!</p>
+            </div>
+          )}
         </div>
       </section>
 

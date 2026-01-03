@@ -14,11 +14,7 @@ import {
 } from "lucide-react";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
-import {
-  getSetById,
-  calculatePrice,
-  diamondQualities,
-} from "@/data/products";
+import { useJewelrySetBySlug, useDiamondQualities, calculateSetPrice } from "@/hooks/useJewelrySets";
 import { useStore } from "@/store/useStore";
 import { toast } from "sonner";
 import QuoteModal from "@/components/QuoteModal";
@@ -28,22 +24,36 @@ import FullscreenGallery from "@/components/FullscreenGallery";
 const SetDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const set = getSetById(id || "");
+  const { data: set, isLoading } = useJewelrySetBySlug(id || "");
+  const { data: diamondQualities } = useDiamondQualities();
 
   const [activeTab, setActiveTab] = useState<"gallery" | "details" | "tryon">(
     "gallery"
   );
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [selectedDiamondQuality, setSelectedDiamondQuality] = useState(
-    diamondQualities[0].id
-  );
+  const [selectedDiamondQuality, setSelectedDiamondQuality] = useState<string | null>(null);
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
   const [tryOnModalOpen, setTryOnModalOpen] = useState(false);
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
   const [fullscreenIndex, setFullscreenIndex] = useState(0);
 
-  const { addToShortlist, removeFromShortlist, isInShortlist } = useStore();
+  const { addToShortlistDB, removeFromShortlist, isInShortlist } = useStore();
   const inShortlist = isInShortlist(set?.id || "");
+
+  // Set default diamond quality when data loads
+  useState(() => {
+    if (diamondQualities && diamondQualities.length > 0 && !selectedDiamondQuality) {
+      setSelectedDiamondQuality(diamondQualities[0].id);
+    }
+  });
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-velvet flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   if (!set) {
     return (
@@ -60,17 +70,40 @@ const SetDetail = () => {
     );
   }
 
-  const allImages = [set.coverImage, ...set.galleryImages];
-  const allVideos = set.galleryVideos || [];
-  const totalMedia = allImages.length + allVideos.length;
-  const estimatedPrice = calculatePrice(set, selectedDiamondQuality);
+  // Build images and videos arrays from media
+  const allImages: string[] = [];
+  const allVideos: string[] = [];
+
+  // Add cover image first if exists
+  if (set.cover_image) {
+    allImages.push(set.cover_image);
+  }
+
+  // Add media items
+  if (set.media) {
+    set.media.forEach((m) => {
+      if (m.type === "video") {
+        allVideos.push(m.url);
+      } else if (m.type === "image" && m.url !== set.cover_image) {
+        allImages.push(m.url);
+      }
+    });
+  }
+
+  // Fallback if no images
+  if (allImages.length === 0) {
+    allImages.push("/placeholder.svg");
+  }
+
+  const selectedQuality = diamondQualities?.find(q => q.id === selectedDiamondQuality);
+  const estimatedPrice = selectedQuality ? calculateSetPrice(set, selectedQuality) : calculateSetPrice(set);
 
   const handleShortlistToggle = () => {
     if (inShortlist) {
       removeFromShortlist(set.id);
       toast.info(`${set.name} removed from shortlist`);
     } else {
-      addToShortlist(set, set.hasDiamond ? selectedDiamondQuality : undefined);
+      addToShortlistDB(set, selectedDiamondQuality || undefined);
       toast.success(`${set.name} added to shortlist`);
     }
   };
@@ -226,12 +259,12 @@ const SetDetail = () => {
               {/* Title and Collection */}
               <div className="mb-6">
                 <span className="text-primary text-sm tracking-wider uppercase">
-                  {set.collection}
+                  {set.collection?.name || "Exclusive Collection"}
                 </span>
                 <h1 className="font-serif text-3xl md:text-4xl text-foreground mt-2">
                   {set.name}
                 </h1>
-                <p className="text-muted-foreground mt-3">{set.description}</p>
+                <p className="text-muted-foreground mt-3">{set.description || set.short_description}</p>
               </div>
 
               {/* Tabs */}
@@ -281,43 +314,27 @@ const SetDetail = () => {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="luxury-card p-4">
                         <p className="text-muted-foreground text-xs uppercase tracking-wider">
-                          Gold Purity
+                          Base Price
                         </p>
                         <p className="text-foreground font-serif text-lg mt-1">
-                          {set.goldPurity}
+                          {set.base_price ? `${set.base_price} BHD` : "On Request"}
                         </p>
-                      </div>
-                      <div className="luxury-card p-4">
-                        <p className="text-muted-foreground text-xs uppercase tracking-wider">
-                          Gold Weight
-                        </p>
-                        <p className="text-foreground font-serif text-lg mt-1">
-                          {set.goldWeightGrams}g
-                        </p>
-                      </div>
-                      <div className="luxury-card p-4">
-                        <p className="text-muted-foreground text-xs uppercase tracking-wider">
-                          SKU
-                        </p>
-                        <p className="text-foreground text-sm mt-1">{set.sku}</p>
                       </div>
                       <div className="luxury-card p-4">
                         <p className="text-muted-foreground text-xs uppercase tracking-wider">
                           Diamond
                         </p>
                         <p className="text-foreground font-serif text-lg mt-1">
-                          {set.hasDiamond ? "Yes" : "No"}
+                          {set.has_diamond ? "Yes" : "No"}
                         </p>
+                      </div>
+                      <div className="luxury-card p-4 col-span-2">
+                        <p className="text-muted-foreground text-xs uppercase tracking-wider">
+                          Collection
+                        </p>
+                        <p className="text-foreground mt-1">{set.collection?.name || "Exclusive"}</p>
                       </div>
                     </div>
-                    {set.stoneDetails && (
-                      <div className="luxury-card p-4">
-                        <p className="text-muted-foreground text-xs uppercase tracking-wider">
-                          Stone Details
-                        </p>
-                        <p className="text-foreground mt-1">{set.stoneDetails}</p>
-                      </div>
-                    )}
                   </motion.div>
                 )}
 
@@ -346,7 +363,7 @@ const SetDetail = () => {
               </AnimatePresence>
 
               {/* Diamond Quality Selector */}
-              {set.hasDiamond && (
+              {set.has_diamond && diamondQualities && diamondQualities.length > 0 && (
                 <div className="mt-8">
                   <h3 className="font-serif text-lg text-foreground mb-3">
                     Diamond Quality
@@ -387,7 +404,7 @@ const SetDetail = () => {
                   Estimated Price
                 </p>
                 <p className="font-serif text-3xl text-primary">
-                  {estimatedPrice.toLocaleString()} BHD
+                  {estimatedPrice > 0 ? `${estimatedPrice.toLocaleString()} BHD` : "Price on request"}
                 </p>
                 <p className="text-muted-foreground/60 text-xs mt-2">
                   Final pricing may vary based on live gold rate and
@@ -426,7 +443,7 @@ const SetDetail = () => {
       <QuoteModal
         open={quoteModalOpen}
         onClose={() => setQuoteModalOpen(false)}
-        selectedSets={[{ set, diamondQuality: selectedDiamondQuality }]}
+        selectedSets={[]}
       />
 
       <TryOnModal
