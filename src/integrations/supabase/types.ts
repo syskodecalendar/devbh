@@ -14,16 +14,273 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      collections: {
+        Row: {
+          cover_image: string | null
+          created_at: string
+          description: string | null
+          display_order: number | null
+          featured: boolean | null
+          id: string
+          name: string
+          short_description: string | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          cover_image?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          featured?: boolean | null
+          id?: string
+          name: string
+          short_description?: string | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          cover_image?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          featured?: boolean | null
+          id?: string
+          name?: string
+          short_description?: string | null
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      diamond_qualities: {
+        Row: {
+          code: string
+          description: string | null
+          display_order: number | null
+          id: string
+          name: string
+          price_multiplier: number | null
+        }
+        Insert: {
+          code: string
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          name: string
+          price_multiplier?: number | null
+        }
+        Update: {
+          code?: string
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          name?: string
+          price_multiplier?: number | null
+        }
+        Relationships: []
+      }
+      jewelry_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number | null
+          id: string
+          name: string
+          set_id: string
+          type: string
+          weight_grams: number | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          name: string
+          set_id: string
+          type: string
+          weight_grams?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          name?: string
+          set_id?: string
+          type?: string
+          weight_grams?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jewelry_items_set_id_fkey"
+            columns: ["set_id"]
+            isOneToOne: false
+            referencedRelation: "jewelry_sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jewelry_media: {
+        Row: {
+          alt_text: string | null
+          created_at: string
+          display_order: number | null
+          id: string
+          is_cover: boolean | null
+          set_id: string
+          type: string
+          url: string
+        }
+        Insert: {
+          alt_text?: string | null
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          is_cover?: boolean | null
+          set_id: string
+          type: string
+          url: string
+        }
+        Update: {
+          alt_text?: string | null
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          is_cover?: boolean | null
+          set_id?: string
+          type?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jewelry_media_set_id_fkey"
+            columns: ["set_id"]
+            isOneToOne: false
+            referencedRelation: "jewelry_sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jewelry_sets: {
+        Row: {
+          base_price: number | null
+          collection_id: string | null
+          cover_image: string | null
+          created_at: string
+          description: string | null
+          diamond_price_per_carat: number | null
+          display_order: number | null
+          featured: boolean | null
+          has_diamond: boolean | null
+          id: string
+          name: string
+          short_description: string | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          base_price?: number | null
+          collection_id?: string | null
+          cover_image?: string | null
+          created_at?: string
+          description?: string | null
+          diamond_price_per_carat?: number | null
+          display_order?: number | null
+          featured?: boolean | null
+          has_diamond?: boolean | null
+          id?: string
+          name: string
+          short_description?: string | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          base_price?: number | null
+          collection_id?: string | null
+          cover_image?: string | null
+          created_at?: string
+          description?: string | null
+          diamond_price_per_carat?: number | null
+          display_order?: number | null
+          featured?: boolean | null
+          has_diamond?: boolean | null
+          id?: string
+          name?: string
+          short_description?: string | null
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jewelry_sets_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "collections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +407,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
