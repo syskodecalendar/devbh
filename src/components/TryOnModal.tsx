@@ -29,11 +29,12 @@ const TryOnModal = ({ open, onClose, setName }: TryOnModalProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Start camera
-  const startCamera = useCallback(async () => {
+  const startCamera = async () => {
     try {
       // Stop any existing stream first
       if (cameraStream) {
         cameraStream.getTracks().forEach((track) => track.stop());
+        setCameraStream(null);
       }
       
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -47,35 +48,43 @@ const TryOnModal = ({ open, onClose, setName }: TryOnModalProps) => {
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        // Wait for video to be ready before setting state
-        await videoRef.current.play();
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play().catch(console.error);
+        };
       }
       setCameraStream(stream);
     } catch (err) {
+      console.error("Camera error:", err);
       toast.error("Camera access denied", {
         description: "Please allow camera access or use photo upload mode.",
       });
       setActiveMode("upload");
     }
-  }, []);
+  };
 
   // Stop camera
-  const stopCamera = useCallback(() => {
+  const stopCamera = () => {
     if (cameraStream) {
       cameraStream.getTracks().forEach((track) => track.stop());
       setCameraStream(null);
     }
-  }, [cameraStream]);
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  };
 
   // Handle mode change
   useEffect(() => {
     if (open && activeMode === "camera") {
       startCamera();
-    } else {
-      stopCamera();
     }
-    return () => stopCamera();
-  }, [open, activeMode, startCamera, stopCamera]);
+    
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, [open, activeMode]);
 
   // Handle file upload
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useEffect, useState, useRef } from "react";
 
 interface GoldParticle {
@@ -112,13 +112,13 @@ const DoorIntroScene = ({ onEnter }: DoorIntroSceneProps) => {
   };
 
   return (
-    <AnimatePresence>
+    <>
       {showContent && (
         <motion.div
           ref={containerRef}
           className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden"
           style={{
-            background: "radial-gradient(ellipse at center, hsl(var(--velvet)) 0%, hsl(var(--background)) 100%)",
+            background: "radial-gradient(ellipse at center, hsl(345 60% 12%) 0%, hsl(0 6% 4%) 100%)",
           }}
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -131,7 +131,7 @@ const DoorIntroScene = ({ onEnter }: DoorIntroSceneProps) => {
           <div 
             className="absolute inset-0 pointer-events-none"
             style={{
-              background: "radial-gradient(ellipse at center, transparent 20%, hsl(var(--background) / 0.7) 70%, hsl(var(--background)) 100%)",
+              background: "radial-gradient(ellipse at center, transparent 20%, hsl(0 6% 4% / 0.7) 70%, hsl(0 6% 4%) 100%)",
             }}
           />
 
@@ -409,7 +409,7 @@ const DoorIntroScene = ({ onEnter }: DoorIntroSceneProps) => {
           </motion.p>
         </motion.div>
       )}
-    </AnimatePresence>
+    </>
   );
 };
 
