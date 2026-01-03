@@ -248,6 +248,48 @@ export type Database = {
         }
         Relationships: []
       }
+      quote_requests: {
+        Row: {
+          created_at: string
+          customer_name: string
+          email: string
+          id: string
+          mobile: string
+          notes: string | null
+          occasion_date: string | null
+          preferred_contact: string
+          selected_items: Json | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_name: string
+          email: string
+          id?: string
+          mobile: string
+          notes?: string | null
+          occasion_date?: string | null
+          preferred_contact?: string
+          selected_items?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_name?: string
+          email?: string
+          id?: string
+          mobile?: string
+          notes?: string | null
+          occasion_date?: string | null
+          preferred_contact?: string
+          selected_items?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string

@@ -7,12 +7,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { JewelrySet } from "@/data/products";
+import { JewelrySetDB } from "@/hooks/useJewelrySets";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface QuoteModalProps {
   open: boolean;
   onClose: () => void;
-  selectedSets: Array<{ set: JewelrySet; diamondQuality?: string }>;
+  selectedSets: Array<{ set: JewelrySet | JewelrySetDB; diamondQuality?: string }>;
 }
 
 const QuoteModal = ({ open, onClose, selectedSets }: QuoteModalProps) => {
@@ -30,23 +32,45 @@ const QuoteModal = ({ open, onClose, selectedSets }: QuoteModalProps) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      // Prepare selected items for storage
+      const selectedItems = selectedSets.map(({ set, diamondQuality }) => ({
+        id: set.id,
+        name: set.name,
+        diamondQuality,
+      }));
 
-    toast.success("Quote request submitted successfully!", {
-      description: "Our team will contact you shortly.",
-    });
+      const { error } = await supabase.from("quote_requests").insert({
+        customer_name: formData.name,
+        mobile: formData.mobile,
+        email: formData.email,
+        preferred_contact: formData.preferredContact,
+        occasion_date: formData.occasionDate || null,
+        notes: formData.notes || null,
+        selected_items: selectedItems.length > 0 ? selectedItems : null,
+      });
 
-    setIsSubmitting(false);
-    onClose();
-    setFormData({
-      name: "",
-      mobile: "",
-      email: "",
-      preferredContact: "whatsapp",
-      occasionDate: "",
-      notes: "",
-    });
+      if (error) throw error;
+
+      toast.success("Quote request submitted successfully!", {
+        description: "Our team will contact you shortly.",
+      });
+
+      onClose();
+      setFormData({
+        name: "",
+        mobile: "",
+        email: "",
+        preferredContact: "whatsapp",
+        occasionDate: "",
+        notes: "",
+      });
+    } catch (error: any) {
+      console.error("Error submitting quote:", error);
+      toast.error("Failed to submit quote request. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!open) return null;

@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Upload, Trash2, Edit, LogOut, Package, Layers, Image, X, ImageIcon, Video, Eye } from "lucide-react";
+import { Plus, Upload, Trash2, Edit, LogOut, Package, Layers, Image, X, ImageIcon, Video, Eye, MessageSquare, Phone, Mail, Calendar, Check, Clock } from "lucide-react";
 import devjiLogo from "@/assets/devji-logo.png";
 import type { User } from "@supabase/supabase-js";
 
@@ -47,11 +47,25 @@ interface JewelryMedia {
   display_order: number | null;
 }
 
+interface QuoteRequest {
+  id: string;
+  customer_name: string;
+  mobile: string;
+  email: string;
+  preferred_contact: string;
+  occasion_date: string | null;
+  notes: string | null;
+  selected_items: unknown;
+  status: string;
+  created_at: string;
+}
+
 const Admin = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [jewelrySets, setJewelrySets] = useState<JewelrySet[]>([]);
+  const [quoteRequests, setQuoteRequests] = useState<QuoteRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
 
@@ -128,16 +142,19 @@ const Admin = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [collectionsRes, setsRes] = await Promise.all([
+      const [collectionsRes, setsRes, quotesRes] = await Promise.all([
         supabase.from("collections").select("*").order("display_order"),
         supabase.from("jewelry_sets").select("*").order("display_order"),
+        supabase.from("quote_requests").select("*").order("created_at", { ascending: false }),
       ]);
 
       if (collectionsRes.error) throw collectionsRes.error;
       if (setsRes.error) throw setsRes.error;
-
+      // Quotes may fail if user is not admin, that's ok
+      
       setCollections(collectionsRes.data || []);
       setJewelrySets(setsRes.data || []);
+      setQuoteRequests(quotesRes.data || []);
     } catch (error: any) {
       console.error("Error fetching data:", error);
       toast.error("Failed to load data");
@@ -501,8 +518,12 @@ const Admin = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="collections" className="space-y-6">
+        <Tabs defaultValue="quotes" className="space-y-6">
           <TabsList className="bg-card border border-border/30">
+            <TabsTrigger value="quotes" className="data-[state=active]:bg-primary/10">
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Quotes ({quoteRequests.length})
+            </TabsTrigger>
             <TabsTrigger value="collections" className="data-[state=active]:bg-primary/10">
               <Layers className="w-4 h-4 mr-2" />
               Collections
@@ -516,6 +537,147 @@ const Admin = () => {
               Media
             </TabsTrigger>
           </TabsList>
+
+          {/* Quotes Tab */}
+          <TabsContent value="quotes" className="space-y-6">
+            <motion.div
+              className="luxury-card p-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <h2 className="font-serif text-xl text-foreground mb-4">
+                Quote Requests
+              </h2>
+              
+              {quoteRequests.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8">
+                  No quote requests yet.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {quoteRequests.map((quote) => {
+                    const selectedItems = Array.isArray(quote.selected_items) ? quote.selected_items as Array<{ id: string; name: string; diamondQuality?: string }> : [];
+                    return (
+                      <div
+                        key={quote.id}
+                        className={`p-4 rounded-lg border ${
+                          quote.status === 'pending' 
+                            ? 'bg-primary/5 border-primary/30' 
+                            : quote.status === 'contacted'
+                            ? 'bg-blue-500/5 border-blue-500/30'
+                            : 'bg-green-500/5 border-green-500/30'
+                        }`}
+                      >
+                        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="font-medium text-foreground">{quote.customer_name}</h3>
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                quote.status === 'pending' 
+                                  ? 'bg-primary/20 text-primary' 
+                                  : quote.status === 'contacted'
+                                  ? 'bg-blue-500/20 text-blue-400'
+                                  : 'bg-green-500/20 text-green-400'
+                              }`}>
+                                {quote.status}
+                              </span>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <Phone className="w-4 h-4" />
+                                <a href={`tel:${quote.mobile}`} className="hover:text-foreground">{quote.mobile}</a>
+                              </div>
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <Mail className="w-4 h-4" />
+                                <a href={`mailto:${quote.email}`} className="hover:text-foreground">{quote.email}</a>
+                              </div>
+                              {quote.occasion_date && (
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <Calendar className="w-4 h-4" />
+                                  <span>{new Date(quote.occasion_date).toLocaleDateString()}</span>
+                                </div>
+                              )}
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <Clock className="w-4 h-4" />
+                                <span>{new Date(quote.created_at).toLocaleString()}</span>
+                              </div>
+                            </div>
+                            
+                            <div className="mt-2 text-sm">
+                              <span className="text-muted-foreground">Preferred: </span>
+                              <span className="text-foreground capitalize">{quote.preferred_contact}</span>
+                            </div>
+
+                            {selectedItems.length > 0 && (
+                              <div className="mt-3 p-3 bg-background/50 rounded-md">
+                                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Interested In:</p>
+                                {selectedItems.map((item, idx) => (
+                                  <p key={idx} className="text-sm text-foreground">
+                                    • {item.name} {item.diamondQuality && `(${item.diamondQuality})`}
+                                  </p>
+                                ))}
+                              </div>
+                            )}
+
+                            {quote.notes && (
+                              <div className="mt-3 p-3 bg-background/50 rounded-md">
+                                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Notes:</p>
+                                <p className="text-sm text-foreground">{quote.notes}</p>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex md:flex-col gap-2">
+                            {quote.status === 'pending' && (
+                              <Button
+                                variant="goldOutline"
+                                size="sm"
+                                onClick={async () => {
+                                  await supabase.from("quote_requests").update({ status: 'contacted' }).eq("id", quote.id);
+                                  fetchData();
+                                  toast.success("Marked as contacted");
+                                }}
+                              >
+                                <Phone className="w-4 h-4 mr-1" />
+                                Contacted
+                              </Button>
+                            )}
+                            {quote.status === 'contacted' && (
+                              <Button
+                                variant="gold"
+                                size="sm"
+                                onClick={async () => {
+                                  await supabase.from("quote_requests").update({ status: 'completed' }).eq("id", quote.id);
+                                  fetchData();
+                                  toast.success("Marked as completed");
+                                }}
+                              >
+                                <Check className="w-4 h-4 mr-1" />
+                                Complete
+                              </Button>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={async () => {
+                                if (!confirm("Delete this quote request?")) return;
+                                await supabase.from("quote_requests").delete().eq("id", quote.id);
+                                fetchData();
+                                toast.success("Quote deleted");
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </motion.div>
+          </TabsContent>
 
           {/* Collections Tab */}
           <TabsContent value="collections" className="space-y-6">
