@@ -307,10 +307,13 @@ interface DoorIntroSceneProps {
   onEnter: () => void;
 }
 
+// Cinematic camera movement phases
+type CameraPhase = "idle" | "dolly_start" | "dolly_through" | "dolly_complete" | "fade_out";
+
 const DoorIntroScene = ({ onEnter }: DoorIntroSceneProps) => {
   const [isOpening, setIsOpening] = useState(false);
   const [showContent, setShowContent] = useState(true);
-  const [zoomPhase, setZoomPhase] = useState<"idle" | "zoom" | "enter">("idle");
+  const [cameraPhase, setCameraPhase] = useState<CameraPhase>("idle");
   const [showBurst, setShowBurst] = useState(false);
   const [showLightBeam, setShowLightBeam] = useState(false);
   const [shake, setShake] = useState(false);
@@ -330,25 +333,35 @@ const DoorIntroScene = ({ onEnter }: DoorIntroSceneProps) => {
   const handleEnter = () => {
     setShowBurst(true);
     setIsOpening(true);
-    setZoomPhase("zoom");
+    setCameraPhase("dolly_start");
     
-    // Trigger light beam and camera shake
+    // Trigger light beam and subtle camera shake
     setTimeout(() => {
       setShowLightBeam(true);
       setShake(true);
-      setTimeout(() => setShake(false), 500);
+      setTimeout(() => setShake(false), 400);
     }, 200);
     
-    // Start zoom after doors open
+    // Begin slow dolly through doors
     setTimeout(() => {
-      setZoomPhase("enter");
-    }, 1800);
+      setCameraPhase("dolly_through");
+    }, 1200);
+    
+    // Complete the dolly movement
+    setTimeout(() => {
+      setCameraPhase("dolly_complete");
+    }, 3500);
+    
+    // Final fade out
+    setTimeout(() => {
+      setCameraPhase("fade_out");
+    }, 4800);
     
     // Complete transition
     setTimeout(() => {
       setShowContent(false);
-      setTimeout(onEnter, 500);
-    }, 2800);
+      setTimeout(onEnter, 300);
+    }, 5500);
   };
 
   return (
@@ -377,40 +390,120 @@ const DoorIntroScene = ({ onEnter }: DoorIntroSceneProps) => {
             }}
           />
 
-          {/* WebGL Gradient Mesh Background */}
-          <Suspense fallback={null}>
-            <GradientMeshBackground />
-          </Suspense>
+          {/* WebGL Gradient Mesh Background - moves slower for parallax */}
+          <motion.div
+            className="absolute inset-0"
+            animate={{
+              scale: cameraPhase === "idle" ? 1 
+                : cameraPhase === "dolly_start" ? 1.02
+                : cameraPhase === "dolly_through" ? 1.3
+                : 1.8,
+            }}
+            transition={{ duration: 3, ease: [0.25, 0.1, 0.25, 1] }}
+          >
+            <Suspense fallback={null}>
+              <GradientMeshBackground />
+            </Suspense>
+          </motion.div>
 
-          <GoldParticles mousePosition={mousePosition} />
-          <AmbientLightRays />
+          {/* Particles layer - moves at medium speed */}
+          <motion.div
+            className="absolute inset-0"
+            animate={{
+              scale: cameraPhase === "idle" ? 1 
+                : cameraPhase === "dolly_start" ? 1.03
+                : cameraPhase === "dolly_through" ? 1.6
+                : 2.2,
+              opacity: cameraPhase === "dolly_complete" || cameraPhase === "fade_out" ? 0 : 1,
+            }}
+            transition={{ duration: 2.5, ease: [0.25, 0.1, 0.25, 1] }}
+          >
+            <GoldParticles mousePosition={mousePosition} />
+          </motion.div>
+          
+          {/* Light rays - moves faster for depth */}
+          <motion.div
+            className="absolute inset-0"
+            animate={{
+              scale: cameraPhase === "idle" ? 1 
+                : cameraPhase === "dolly_start" ? 1.04
+                : cameraPhase === "dolly_through" ? 1.8
+                : 2.5,
+              opacity: cameraPhase === "dolly_complete" || cameraPhase === "fade_out" ? 0 : 1,
+            }}
+            transition={{ duration: 2.2, ease: [0.25, 0.1, 0.25, 1] }}
+          >
+            <AmbientLightRays />
+          </motion.div>
+          
           <DoorLightBeam isActive={showLightBeam} />
           
-          {/* Deep cinematic vignette */}
-          <div 
+          {/* Deep cinematic vignette - intensifies during dolly */}
+          <motion.div 
             className="absolute inset-0 pointer-events-none"
             style={{
               background: "radial-gradient(ellipse at center, transparent 15%, hsl(0 5% 3% / 0.4) 50%, hsl(0 5% 3% / 0.85) 100%)",
             }}
+            animate={{
+              opacity: cameraPhase === "dolly_through" || cameraPhase === "dolly_complete" ? 0.3 : 1,
+            }}
+            transition={{ duration: 2 }}
           />
 
-          {/* 3D Scene Container */}
+          {/* Cinematic letterbox bars */}
+          <motion.div
+            className="absolute top-0 left-0 right-0 bg-black z-40"
+            initial={{ height: 0 }}
+            animate={{ 
+              height: cameraPhase !== "idle" ? "8vh" : 0 
+            }}
+            transition={{ duration: 1.5, ease: [0.4, 0, 0.2, 1] }}
+          />
+          <motion.div
+            className="absolute bottom-0 left-0 right-0 bg-black z-40"
+            initial={{ height: 0 }}
+            animate={{ 
+              height: cameraPhase !== "idle" ? "8vh" : 0 
+            }}
+            transition={{ duration: 1.5, ease: [0.4, 0, 0.2, 1] }}
+          />
+
+          {/* Slow cinematic fade to white/gold at the end */}
+          <motion.div
+            className="absolute inset-0 pointer-events-none z-50"
+            style={{
+              background: "radial-gradient(ellipse at center, hsl(43 60% 90%) 0%, hsl(43 50% 95%) 100%)",
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ 
+              opacity: cameraPhase === "fade_out" ? 1 : 0 
+            }}
+            transition={{ duration: 1.2, ease: "easeInOut" }}
+          />
+
+          {/* 3D Scene Container - Cinematic Dolly Camera */}
           <motion.div
             className="relative"
             style={{ 
-              perspective: "1500px",
+              perspective: "2000px",
               perspectiveOrigin: "center center",
             }}
-            animate={
-              zoomPhase === "zoom" 
-                ? { scale: 1.1 }
-                : zoomPhase === "enter"
-                ? { scale: 3, opacity: 0 }
-                : { scale: 1 }
-            }
+            animate={{
+              scale: cameraPhase === "idle" ? 1 
+                : cameraPhase === "dolly_start" ? 1.05
+                : cameraPhase === "dolly_through" ? 2.5
+                : cameraPhase === "dolly_complete" ? 4.5
+                : 6,
+              z: cameraPhase === "idle" ? 0 
+                : cameraPhase === "dolly_start" ? 50
+                : cameraPhase === "dolly_through" ? 400
+                : 800,
+            }}
             transition={{ 
-              duration: zoomPhase === "enter" ? 1.2 : 0.8,
-              ease: "easeInOut"
+              duration: cameraPhase === "dolly_through" ? 2.5 
+                : cameraPhase === "dolly_complete" ? 1.5 
+                : 1,
+              ease: [0.25, 0.1, 0.25, 1], // Cinematic easing
             }}
           >
             {/* Door Frame with 3D Transform */}
