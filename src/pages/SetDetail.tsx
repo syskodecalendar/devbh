@@ -9,6 +9,8 @@ import {
   Info,
   Image,
   ArrowLeft,
+  Play,
+  Maximize2,
 } from "lucide-react";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -21,6 +23,7 @@ import { useStore } from "@/store/useStore";
 import { toast } from "sonner";
 import QuoteModal from "@/components/QuoteModal";
 import TryOnModal from "@/components/TryOnModal";
+import FullscreenGallery from "@/components/FullscreenGallery";
 
 const SetDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -36,6 +39,8 @@ const SetDetail = () => {
   );
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
   const [tryOnModalOpen, setTryOnModalOpen] = useState(false);
+  const [fullscreenOpen, setFullscreenOpen] = useState(false);
+  const [fullscreenIndex, setFullscreenIndex] = useState(0);
 
   const { addToShortlist, removeFromShortlist, isInShortlist } = useStore();
   const inShortlist = isInShortlist(set?.id || "");
@@ -56,6 +61,8 @@ const SetDetail = () => {
   }
 
   const allImages = [set.coverImage, ...set.galleryImages];
+  const allVideos = set.galleryVideos || [];
+  const totalMedia = allImages.length + allVideos.length;
   const estimatedPrice = calculatePrice(set, selectedDiamondQuality);
 
   const handleShortlistToggle = () => {
@@ -76,6 +83,11 @@ const SetDetail = () => {
     setCurrentImageIndex(
       (prev) => (prev - 1 + allImages.length) % allImages.length
     );
+  };
+
+  const openFullscreen = (index: number) => {
+    setFullscreenIndex(index);
+    setFullscreenOpen(true);
   };
 
   const tabs = [
@@ -109,7 +121,10 @@ const SetDetail = () => {
               transition={{ duration: 0.6 }}
             >
               {/* Main Image */}
-              <div className="relative aspect-square rounded-lg overflow-hidden luxury-card mb-4">
+              <div 
+                className="relative aspect-square rounded-lg overflow-hidden luxury-card mb-4 cursor-pointer group"
+                onClick={() => openFullscreen(currentImageIndex)}
+              >
                 <AnimatePresence mode="wait">
                   <motion.img
                     key={currentImageIndex}
@@ -123,17 +138,22 @@ const SetDetail = () => {
                   />
                 </AnimatePresence>
 
+                {/* Fullscreen hint */}
+                <div className="absolute top-4 right-4 p-2 rounded-full bg-background/50 backdrop-blur-sm text-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Maximize2 className="w-5 h-5" />
+                </div>
+
                 {/* Navigation arrows */}
                 {allImages.length > 1 && (
                   <>
                     <button
-                      onClick={prevImage}
+                      onClick={(e) => { e.stopPropagation(); prevImage(); }}
                       className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-background/50 backdrop-blur-sm text-foreground hover:bg-background/80 transition-colors"
                     >
                       <ChevronLeft className="w-5 h-5" />
                     </button>
                     <button
-                      onClick={nextImage}
+                      onClick={(e) => { e.stopPropagation(); nextImage(); }}
                       className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-background/50 backdrop-blur-sm text-foreground hover:bg-background/80 transition-colors"
                     >
                       <ChevronRight className="w-5 h-5" />
@@ -147,7 +167,7 @@ const SetDetail = () => {
                 </div>
               </div>
 
-              {/* Thumbnail strip */}
+              {/* Thumbnail strip - Images */}
               <div className="flex gap-2 overflow-x-auto pb-2">
                 {allImages.map((img, idx) => (
                   <button
@@ -167,6 +187,34 @@ const SetDetail = () => {
                   </button>
                 ))}
               </div>
+
+              {/* Video section */}
+              {allVideos.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="font-serif text-lg text-foreground mb-3">Videos</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {allVideos.map((video, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => openFullscreen(allImages.length + idx)}
+                        className="relative aspect-video rounded-lg overflow-hidden luxury-card group"
+                      >
+                        <video
+                          src={video}
+                          className="w-full h-full object-cover"
+                          muted
+                          playsInline
+                        />
+                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/50 transition-colors">
+                          <div className="p-3 rounded-full bg-primary/90">
+                            <Play className="w-6 h-6 text-primary-foreground fill-current" />
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </motion.div>
 
             {/* Right Column - Details */}
@@ -385,6 +433,15 @@ const SetDetail = () => {
         open={tryOnModalOpen}
         onClose={() => setTryOnModalOpen(false)}
         setName={set.name}
+      />
+
+      <FullscreenGallery
+        open={fullscreenOpen}
+        onClose={() => setFullscreenOpen(false)}
+        images={allImages}
+        videos={allVideos}
+        initialIndex={fullscreenIndex}
+        title={set.name}
       />
     </div>
   );
