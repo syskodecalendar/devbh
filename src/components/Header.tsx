@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Heart, Menu, X, Home } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useStore } from "@/store/useStore";
 import { Button } from "@/components/ui/button";
 import devjiLogo from "@/assets/devji-logo.png";
@@ -10,7 +10,21 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   const { shortlist, setHasEnteredShowroom } = useStore();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      // Show header after scrolling past 80% of viewport height
+      const scrollThreshold = window.innerHeight * 0.8;
+      setIsVisible(window.scrollY > scrollThreshold);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    handleScroll(); // Check initial position
+    
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const handleHomeClick = () => {
     setHasEnteredShowroom(false);
@@ -23,7 +37,15 @@ const Header = () => {
   ];
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-md border-b border-border/30">
+    <AnimatePresence>
+      {isVisible && (
+        <motion.header
+          className="fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-md border-b border-border/30"
+          initial={{ y: -100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -100, opacity: 0 }}
+          transition={{ duration: 0.3 }}
+        >
       <div className="container mx-auto px-4 h-16 md:h-20 flex items-center justify-between">
         {/* Logo */}
         <Link to="/showroom" className="flex items-center gap-2">
@@ -136,7 +158,9 @@ const Header = () => {
           </motion.nav>
         )}
       </AnimatePresence>
-    </header>
+        </motion.header>
+      )}
+    </AnimatePresence>
   );
 };
 
