@@ -1,6 +1,10 @@
 import rubyRoyaleNecklace from "@/assets/jewelry/ruby-royale-necklace.jpg";
 import rubyRoyaleModel from "@/assets/jewelry/ruby-royale-model.png";
 import rubyRoyaleVideo from "@/assets/jewelry/ruby-royale-video.mp4";
+import maroonMajestyNecklace from "@/assets/jewelry/maroon-majesty-necklace.jpg";
+import maroonMajestyBracelet from "@/assets/jewelry/maroon-majesty-bracelet.jpg";
+import maroonMajestyVideo1 from "@/assets/jewelry/maroon-majesty-video1.mp4";
+import maroonMajestyVideo2 from "@/assets/jewelry/maroon-majesty-video2.mp4";
 
 export interface JewelrySet {
   id: string;
@@ -73,19 +77,19 @@ export const jewelrySets: JewelrySet[] = [
   {
     id: "maroon-majesty",
     name: "Maroon Majesty",
-    description: "A stunning ensemble that captures the essence of bridal opulence. This 22K gold set features deep maroon enamel work complemented by polki diamonds and kundan settings. Each piece is meticulously crafted to ensure the bride radiates magnificence on her special day.",
-    shortDescription: "22K Gold with maroon enamel and polki diamonds",
-    coverImage: "/placeholder.svg",
-    galleryImages: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg", "/placeholder.svg"],
-    galleryVideos: [],
-    goldPurity: "22K",
-    goldWeightGrams: 210,
+    description: "A stunning diamond ensemble that captures the essence of bridal opulence. This 18K white gold set features an exquisite necklace with cascading teardrop diamonds and a matching floral diamond bracelet. Each piece is meticulously crafted to ensure the bride radiates magnificence on her special day.",
+    shortDescription: "18K White Gold with cascading diamonds",
+    coverImage: maroonMajestyNecklace,
+    galleryImages: [maroonMajestyNecklace, maroonMajestyBracelet],
+    galleryVideos: [maroonMajestyVideo1, maroonMajestyVideo2],
+    goldPurity: "18K",
+    goldWeightGrams: 95,
     sku: "DV-MM-2024-002",
     hasDiamond: true,
-    diamondBaseBHD: 3200,
-    baseGoldPriceBHD: 14200,
+    diamondBaseBHD: 4500,
+    baseGoldPriceBHD: 6200,
     makingChargeBHD: 2100,
-    stoneDetails: "Polki Diamonds (8.5 carats), Maroon Meenakari Enamel",
+    stoneDetails: "Marquise Cut Diamonds (5.2 carats), Pear Cut Diamonds (3.8 carats)",
     collection: "Bridal Luxe",
     isFeatured: true,
   },
