@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Upload, Trash2, Edit, LogOut, Package, Layers, Image } from "lucide-react";
+import { Plus, Upload, Trash2, Edit, LogOut, Package, Layers, Image, X } from "lucide-react";
 import devjiLogo from "@/assets/devji-logo.png";
 import type { User } from "@supabase/supabase-js";
 
@@ -68,6 +69,28 @@ const Admin = () => {
     description: "",
     base_price: "",
     has_diamond: false,
+    collection_id: "",
+  });
+
+  // Edit modal states
+  const [editingCollection, setEditingCollection] = useState<Collection | null>(null);
+  const [editingSet, setEditingSet] = useState<JewelrySet | null>(null);
+  const [editCollectionForm, setEditCollectionForm] = useState({
+    name: "",
+    slug: "",
+    short_description: "",
+    description: "",
+    featured: false,
+    display_order: 0,
+  });
+  const [editSetForm, setEditSetForm] = useState({
+    name: "",
+    slug: "",
+    short_description: "",
+    description: "",
+    base_price: "",
+    has_diamond: false,
+    featured: false,
     collection_id: "",
   });
 
@@ -221,6 +244,89 @@ const Admin = () => {
       fetchData();
     } catch (error: any) {
       toast.error(error.message || "Failed to delete jewelry set");
+    }
+  };
+
+  // Edit handlers
+  const handleEditCollection = (collection: Collection) => {
+    setEditingCollection(collection);
+    setEditCollectionForm({
+      name: collection.name,
+      slug: collection.slug,
+      short_description: collection.short_description || "",
+      description: collection.description || "",
+      featured: collection.featured || false,
+      display_order: collection.display_order || 0,
+    });
+  };
+
+  const handleEditSet = (set: JewelrySet) => {
+    setEditingSet(set);
+    setEditSetForm({
+      name: set.name,
+      slug: set.slug,
+      short_description: set.short_description || "",
+      description: set.description || "",
+      base_price: set.base_price?.toString() || "",
+      has_diamond: set.has_diamond || false,
+      featured: set.featured || false,
+      collection_id: set.collection_id || "",
+    });
+  };
+
+  const handleUpdateCollection = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCollection) return;
+
+    try {
+      const { error } = await supabase
+        .from("collections")
+        .update({
+          name: editCollectionForm.name,
+          slug: editCollectionForm.slug,
+          short_description: editCollectionForm.short_description,
+          description: editCollectionForm.description,
+          featured: editCollectionForm.featured,
+          display_order: editCollectionForm.display_order,
+        })
+        .eq("id", editingCollection.id);
+
+      if (error) throw error;
+
+      toast.success("Collection updated successfully!");
+      setEditingCollection(null);
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update collection");
+    }
+  };
+
+  const handleUpdateSet = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSet) return;
+
+    try {
+      const { error } = await supabase
+        .from("jewelry_sets")
+        .update({
+          name: editSetForm.name,
+          slug: editSetForm.slug,
+          short_description: editSetForm.short_description,
+          description: editSetForm.description,
+          base_price: parseFloat(editSetForm.base_price) || 0,
+          has_diamond: editSetForm.has_diamond,
+          featured: editSetForm.featured,
+          collection_id: editSetForm.collection_id || null,
+        })
+        .eq("id", editingSet.id);
+
+      if (error) throw error;
+
+      toast.success("Jewelry set updated successfully!");
+      setEditingSet(null);
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update jewelry set");
     }
   };
 
@@ -383,7 +489,7 @@ const Admin = () => {
                           <p className="text-sm text-muted-foreground">{collection.short_description}</p>
                         </div>
                         <div className="flex gap-2">
-                          <Button variant="ghost" size="icon">
+                          <Button variant="ghost" size="icon" onClick={() => handleEditCollection(collection)}>
                             <Edit className="w-4 h-4" />
                           </Button>
                           <Button
@@ -526,7 +632,7 @@ const Admin = () => {
                               </span>
                             </Button>
                           </label>
-                          <Button variant="ghost" size="icon">
+                          <Button variant="ghost" size="icon" onClick={() => handleEditSet(set)}>
                             <Edit className="w-4 h-4" />
                           </Button>
                           <Button
@@ -584,6 +690,182 @@ const Admin = () => {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Edit Collection Modal */}
+      <Dialog open={!!editingCollection} onOpenChange={() => setEditingCollection(null)}>
+        <DialogContent className="bg-card border-border max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-xl text-foreground">Edit Collection</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleUpdateCollection} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Name</Label>
+              <Input
+                value={editCollectionForm.name}
+                onChange={(e) => setEditCollectionForm({ ...editCollectionForm, name: e.target.value })}
+                placeholder="Collection name"
+                required
+                className="bg-secondary border-border"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Slug (URL-friendly name)</Label>
+              <Input
+                value={editCollectionForm.slug}
+                onChange={(e) => setEditCollectionForm({ ...editCollectionForm, slug: e.target.value })}
+                placeholder="collection-name"
+                className="bg-secondary border-border"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Short Description</Label>
+              <Input
+                value={editCollectionForm.short_description}
+                onChange={(e) => setEditCollectionForm({ ...editCollectionForm, short_description: e.target.value })}
+                placeholder="Brief description"
+                className="bg-secondary border-border"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Full Description</Label>
+              <Textarea
+                value={editCollectionForm.description}
+                onChange={(e) => setEditCollectionForm({ ...editCollectionForm, description: e.target.value })}
+                placeholder="Detailed description"
+                className="bg-secondary border-border"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Display Order</Label>
+              <Input
+                type="number"
+                value={editCollectionForm.display_order}
+                onChange={(e) => setEditCollectionForm({ ...editCollectionForm, display_order: parseInt(e.target.value) || 0 })}
+                className="bg-secondary border-border"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="editCollectionFeatured"
+                checked={editCollectionForm.featured}
+                onChange={(e) => setEditCollectionForm({ ...editCollectionForm, featured: e.target.checked })}
+                className="w-4 h-4"
+              />
+              <Label htmlFor="editCollectionFeatured">Featured Collection</Label>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button type="button" variant="outline" className="flex-1" onClick={() => setEditingCollection(null)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="gold" className="flex-1">
+                Save Changes
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Jewelry Set Modal */}
+      <Dialog open={!!editingSet} onOpenChange={() => setEditingSet(null)}>
+        <DialogContent className="bg-card border-border max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-xl text-foreground">Edit Jewelry Set</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleUpdateSet} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Name</Label>
+              <Input
+                value={editSetForm.name}
+                onChange={(e) => setEditSetForm({ ...editSetForm, name: e.target.value })}
+                placeholder="Set name"
+                required
+                className="bg-secondary border-border"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Collection</Label>
+              <select
+                value={editSetForm.collection_id}
+                onChange={(e) => setEditSetForm({ ...editSetForm, collection_id: e.target.value })}
+                className="w-full h-10 px-3 bg-secondary border border-border rounded-md text-foreground"
+              >
+                <option value="">Select collection</option>
+                {collections.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>Base Price (BHD)</Label>
+              <Input
+                type="number"
+                value={editSetForm.base_price}
+                onChange={(e) => setEditSetForm({ ...editSetForm, base_price: e.target.value })}
+                placeholder="0.00"
+                className="bg-secondary border-border"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Slug (URL-friendly name)</Label>
+              <Input
+                value={editSetForm.slug}
+                onChange={(e) => setEditSetForm({ ...editSetForm, slug: e.target.value })}
+                placeholder="set-name"
+                className="bg-secondary border-border"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Short Description</Label>
+              <Input
+                value={editSetForm.short_description}
+                onChange={(e) => setEditSetForm({ ...editSetForm, short_description: e.target.value })}
+                placeholder="Brief description"
+                className="bg-secondary border-border"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Full Description</Label>
+              <Textarea
+                value={editSetForm.description}
+                onChange={(e) => setEditSetForm({ ...editSetForm, description: e.target.value })}
+                placeholder="Detailed description"
+                className="bg-secondary border-border"
+              />
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="editSetHasDiamond"
+                  checked={editSetForm.has_diamond}
+                  onChange={(e) => setEditSetForm({ ...editSetForm, has_diamond: e.target.checked })}
+                  className="w-4 h-4"
+                />
+                <Label htmlFor="editSetHasDiamond">Has Diamond</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="editSetFeatured"
+                  checked={editSetForm.featured}
+                  onChange={(e) => setEditSetForm({ ...editSetForm, featured: e.target.checked })}
+                  className="w-4 h-4"
+                />
+                <Label htmlFor="editSetFeatured">Featured</Label>
+              </div>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button type="button" variant="outline" className="flex-1" onClick={() => setEditingSet(null)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="gold" className="flex-1">
+                Save Changes
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
