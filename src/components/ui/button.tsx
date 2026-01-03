@@ -5,7 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -15,11 +15,17 @@ const buttonVariants = cva(
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        // Luxury variants for bridal world
+        gold: "bg-gradient-to-r from-primary via-gold-light to-primary text-primary-foreground font-serif tracking-wider uppercase hover:shadow-[0_0_30px_hsl(43_65%_53%_/_0.4)] transition-shadow duration-300",
+        goldOutline: "border border-primary/40 text-primary bg-transparent hover:bg-primary/10 hover:border-primary font-serif tracking-wider uppercase transition-all duration-300",
+        luxury: "bg-card/80 backdrop-blur-sm border border-border/50 text-foreground hover:bg-card hover:border-primary/40 transition-all duration-300",
+        hero: "bg-gradient-to-r from-primary via-gold-light to-primary text-primary-foreground font-serif text-lg tracking-widest uppercase px-10 py-6 hover:shadow-[0_0_50px_hsl(43_65%_53%_/_0.5)] transition-all duration-500",
       },
       size: {
         default: "h-10 px-4 py-2",
         sm: "h-9 rounded-md px-3",
         lg: "h-11 rounded-md px-8",
+        xl: "h-14 rounded-md px-10 text-lg",
         icon: "h-10 w-10",
       },
     },
