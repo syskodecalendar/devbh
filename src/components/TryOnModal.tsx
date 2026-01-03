@@ -1,11 +1,11 @@
 import { motion } from "framer-motion";
 import { useState, useRef, useCallback, useEffect } from "react";
-import { X, Camera, Upload, RotateCw, ZoomIn, ZoomOut, Move } from "lucide-react";
+import { X, Camera, Upload, RotateCw, ZoomIn, Move } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-
+import necklaceOverlay from "@/assets/jewelry/necklace-overlay.png";
 interface TryOnModalProps {
   open: boolean;
   onClose: () => void;
@@ -222,7 +222,7 @@ const TryOnModal = ({ open, onClose, setName }: TryOnModalProps) => {
                   />
                   {/* Necklace overlay */}
                   <div
-                    className="absolute left-1/2 cursor-move"
+                    className="absolute left-1/2 cursor-move pointer-events-auto select-none"
                     style={{
                       top: `${necklaceSettings.positionY}%`,
                       transform: `translateX(-50%) scale(${
@@ -231,10 +231,16 @@ const TryOnModal = ({ open, onClose, setName }: TryOnModalProps) => {
                     }}
                     onMouseDown={handleMouseDown}
                   >
-                    {/* Placeholder necklace - will be replaced with actual asset */}
-                    <div className="w-48 h-24 border-4 border-primary rounded-b-full border-t-0 opacity-80">
-                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-8 h-8 bg-primary rounded-full" />
-                    </div>
+                    <img 
+                      src={necklaceOverlay} 
+                      alt="Necklace overlay"
+                      className="w-64 h-auto drop-shadow-lg"
+                      style={{
+                        mixBlendMode: "multiply",
+                        filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.3))",
+                      }}
+                      draggable={false}
+                    />
                   </div>
                   {!cameraStream && (
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -257,7 +263,7 @@ const TryOnModal = ({ open, onClose, setName }: TryOnModalProps) => {
                       />
                       {/* Necklace overlay */}
                       <div
-                        className="absolute left-1/2 cursor-move"
+                        className="absolute left-1/2 cursor-move pointer-events-auto select-none"
                         style={{
                           top: `${necklaceSettings.positionY}%`,
                           transform: `translateX(-50%) scale(${
@@ -266,9 +272,16 @@ const TryOnModal = ({ open, onClose, setName }: TryOnModalProps) => {
                         }}
                         onMouseDown={handleMouseDown}
                       >
-                        <div className="w-48 h-24 border-4 border-primary rounded-b-full border-t-0 opacity-80">
-                          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-8 h-8 bg-primary rounded-full" />
-                        </div>
+                        <img 
+                          src={necklaceOverlay} 
+                          alt="Necklace overlay"
+                          className="w-64 h-auto drop-shadow-lg"
+                          style={{
+                            mixBlendMode: "multiply",
+                            filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.3))",
+                          }}
+                          draggable={false}
+                        />
                       </div>
                     </>
                   ) : (
