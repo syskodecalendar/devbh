@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Upload, Trash2, Edit, LogOut, Package, Layers, Image, X } from "lucide-react";
+import { Plus, Upload, Trash2, Edit, LogOut, Package, Layers, Image, X, ImageIcon, Video, Eye } from "lucide-react";
 import devjiLogo from "@/assets/devji-logo.png";
 import type { User } from "@supabase/supabase-js";
 
@@ -54,6 +54,11 @@ const Admin = () => {
   const [jewelrySets, setJewelrySets] = useState<JewelrySet[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+
+  // Media management state
+  const [selectedSetForMedia, setSelectedSetForMedia] = useState<JewelrySet | null>(null);
+  const [setMedia, setSetMedia] = useState<JewelryMedia[]>([]);
+  const [loadingMedia, setLoadingMedia] = useState(false);
 
   // Form states
   const [newCollection, setNewCollection] = useState({
@@ -138,6 +143,24 @@ const Admin = () => {
       toast.error("Failed to load data");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSetMedia = async (setId: string) => {
+    setLoadingMedia(true);
+    try {
+      const { data, error } = await supabase
+        .from("jewelry_media")
+        .select("*")
+        .eq("set_id", setId)
+        .order("display_order");
+
+      if (error) throw error;
+      setSetMedia(data || []);
+    } catch (error: any) {
+      toast.error("Failed to load media");
+    } finally {
+      setLoadingMedia(false);
     }
   };
 
@@ -330,15 +353,64 @@ const Admin = () => {
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, setId: string) => {
+  // Cover image upload handlers
+  const handleCollectionCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>, collectionId: string) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setUploading(true);
     try {
-      const url = await uploadImage(file, `sets/${setId}`);
+      const url = await uploadImage(file, `collections/${collectionId}`);
       if (url) {
-        // Add to jewelry_media
+        const { error } = await supabase
+          .from("collections")
+          .update({ cover_image: url })
+          .eq("id", collectionId);
+
+        if (error) throw error;
+        toast.success("Cover image uploaded!");
+        fetchData();
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to upload cover image");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSetCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>, setId: string) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const url = await uploadImage(file, `sets/${setId}/cover`);
+      if (url) {
+        const { error } = await supabase
+          .from("jewelry_sets")
+          .update({ cover_image: url })
+          .eq("id", setId);
+
+        if (error) throw error;
+        toast.success("Cover image uploaded!");
+        fetchData();
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to upload cover image");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Media management handlers
+  const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>, setId: string) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const url = await uploadImage(file, `sets/${setId}/media`);
+      if (url) {
         const { error } = await supabase.from("jewelry_media").insert({
           set_id: setId,
           type: file.type.startsWith("video/") ? "video" : "image",
@@ -347,13 +419,52 @@ const Admin = () => {
         });
 
         if (error) throw error;
-        toast.success("Image uploaded successfully!");
+        toast.success("Media uploaded successfully!");
+        if (selectedSetForMedia) {
+          fetchSetMedia(selectedSetForMedia.id);
+        }
       }
     } catch (error: any) {
-      toast.error(error.message || "Failed to upload image");
+      toast.error(error.message || "Failed to upload media");
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleDeleteMedia = async (mediaId: string) => {
+    if (!confirm("Delete this media?")) return;
+
+    try {
+      const { error } = await supabase.from("jewelry_media").delete().eq("id", mediaId);
+      if (error) throw error;
+      toast.success("Media deleted");
+      if (selectedSetForMedia) {
+        fetchSetMedia(selectedSetForMedia.id);
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete media");
+    }
+  };
+
+  const handleSetAsCover = async (media: JewelryMedia) => {
+    try {
+      // First, update the jewelry_set cover_image
+      const { error } = await supabase
+        .from("jewelry_sets")
+        .update({ cover_image: media.url })
+        .eq("id", media.set_id);
+
+      if (error) throw error;
+      toast.success("Set as cover image!");
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to set cover image");
+    }
+  };
+
+  const openMediaManager = (set: JewelrySet) => {
+    setSelectedSetForMedia(set);
+    fetchSetMedia(set.id);
   };
 
   if (loading) {
@@ -473,7 +584,7 @@ const Admin = () => {
                 <h2 className="font-serif text-xl text-foreground mb-4">
                   Existing Collections ({collections.length})
                 </h2>
-                <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                <div className="space-y-3 max-h-[500px] overflow-y-auto">
                   {collections.length === 0 ? (
                     <p className="text-muted-foreground text-center py-8">
                       No collections yet. Create your first one!
@@ -482,13 +593,40 @@ const Admin = () => {
                     collections.map((collection) => (
                       <div
                         key={collection.id}
-                        className="flex items-center justify-between p-3 bg-secondary rounded-lg"
+                        className="flex items-center gap-3 p-3 bg-secondary rounded-lg"
                       >
-                        <div>
-                          <p className="font-medium text-foreground">{collection.name}</p>
-                          <p className="text-sm text-muted-foreground">{collection.short_description}</p>
+                        {/* Cover Image Thumbnail */}
+                        <div className="w-16 h-16 flex-shrink-0 rounded-md overflow-hidden bg-background">
+                          {collection.cover_image ? (
+                            <img src={collection.cover_image} alt={collection.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <ImageIcon className="w-6 h-6 text-muted-foreground" />
+                            </div>
+                          )}
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-foreground truncate">{collection.name}</p>
+                          <p className="text-sm text-muted-foreground truncate">{collection.short_description}</p>
+                          {collection.featured && (
+                            <span className="text-xs text-primary">Featured</span>
+                          )}
+                        </div>
+                        <div className="flex gap-1 flex-shrink-0">
+                          <label className="cursor-pointer">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => handleCollectionCoverUpload(e, collection.id)}
+                              disabled={uploading}
+                            />
+                            <Button variant="ghost" size="icon" asChild>
+                              <span title="Upload cover">
+                                <Upload className="w-4 h-4" />
+                              </span>
+                            </Button>
+                          </label>
                           <Button variant="ghost" size="icon" onClick={() => handleEditCollection(collection)}>
                             <Edit className="w-4 h-4" />
                           </Button>
@@ -608,30 +746,44 @@ const Admin = () => {
                     jewelrySets.map((set) => (
                       <div
                         key={set.id}
-                        className="flex items-center justify-between p-3 bg-secondary rounded-lg"
+                        className="flex items-center gap-3 p-3 bg-secondary rounded-lg"
                       >
-                        <div className="flex-1">
-                          <p className="font-medium text-foreground">{set.name}</p>
-                          <p className="text-sm text-muted-foreground">{set.short_description}</p>
+                        {/* Cover Image Thumbnail */}
+                        <div className="w-16 h-16 flex-shrink-0 rounded-md overflow-hidden bg-background">
+                          {set.cover_image ? (
+                            <img src={set.cover_image} alt={set.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <ImageIcon className="w-6 h-6 text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-foreground truncate">{set.name}</p>
+                          <p className="text-sm text-muted-foreground truncate">{set.short_description}</p>
                           <p className="text-xs text-primary mt-1">
                             {set.base_price ? `${set.base_price} BHD` : "Price not set"}
+                            {set.featured && <span className="ml-2 text-primary">• Featured</span>}
                           </p>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-1 flex-shrink-0">
                           <label className="cursor-pointer">
                             <input
                               type="file"
-                              accept="image/*,video/*"
+                              accept="image/*"
                               className="hidden"
-                              onChange={(e) => handleImageUpload(e, set.id)}
+                              onChange={(e) => handleSetCoverUpload(e, set.id)}
                               disabled={uploading}
                             />
-                            <Button variant="ghost" size="icon" asChild>
+                            <Button variant="ghost" size="icon" asChild title="Upload cover">
                               <span>
                                 <Upload className="w-4 h-4" />
                               </span>
                             </Button>
                           </label>
+                          <Button variant="ghost" size="icon" onClick={() => openMediaManager(set)} title="Manage media">
+                            <Eye className="w-4 h-4" />
+                          </Button>
                           <Button variant="ghost" size="icon" onClick={() => handleEditSet(set)}>
                             <Edit className="w-4 h-4" />
                           </Button>
@@ -661,29 +813,28 @@ const Admin = () => {
               <h2 className="font-serif text-xl text-foreground mb-4">
                 Media Management
               </h2>
-              <p className="text-muted-foreground">
-                Upload images and videos for your jewelry sets. Select a set from the Jewelry Sets tab and click the upload icon to add media.
+              <p className="text-muted-foreground mb-6">
+                Select a jewelry set to manage its media (images and videos). Click the eye icon on any set to view and manage its gallery.
               </p>
-              <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {jewelrySets.map((set) => (
-                  <div key={set.id} className="bg-secondary rounded-lg p-4">
-                    <p className="font-medium text-sm text-foreground mb-2">{set.name}</p>
-                    <label className="cursor-pointer block">
-                      <input
-                        type="file"
-                        accept="image/*,video/*"
-                        className="hidden"
-                        onChange={(e) => handleImageUpload(e, set.id)}
-                        disabled={uploading}
-                      />
-                      <div className="border-2 border-dashed border-border rounded-lg p-4 text-center hover:border-primary transition-colors">
-                        <Upload className="w-6 h-6 mx-auto text-muted-foreground mb-2" />
-                        <span className="text-xs text-muted-foreground">
-                          {uploading ? "Uploading..." : "Click to upload"}
-                        </span>
-                      </div>
-                    </label>
-                  </div>
+                  <button
+                    key={set.id}
+                    onClick={() => openMediaManager(set)}
+                    className="bg-secondary rounded-lg p-4 text-left hover:bg-secondary/80 transition-colors group"
+                  >
+                    <div className="aspect-square rounded-md overflow-hidden bg-background mb-3">
+                      {set.cover_image ? (
+                        <img src={set.cover_image} alt={set.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <ImageIcon className="w-8 h-8 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+                    <p className="font-medium text-sm text-foreground truncate">{set.name}</p>
+                    <p className="text-xs text-muted-foreground">Click to manage media</p>
+                  </button>
                 ))}
               </div>
             </motion.div>
@@ -864,6 +1015,87 @@ const Admin = () => {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Media Manager Modal */}
+      <Dialog open={!!selectedSetForMedia} onOpenChange={() => setSelectedSetForMedia(null)}>
+        <DialogContent className="bg-card border-border max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-xl text-foreground">
+              Media for {selectedSetForMedia?.name}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {/* Upload Section */}
+          <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+            <label className="cursor-pointer block">
+              <input
+                type="file"
+                accept="image/*,video/*"
+                className="hidden"
+                onChange={(e) => selectedSetForMedia && handleMediaUpload(e, selectedSetForMedia.id)}
+                disabled={uploading}
+              />
+              <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+              <p className="text-foreground font-medium">
+                {uploading ? "Uploading..." : "Click to upload images or videos"}
+              </p>
+              <p className="text-muted-foreground text-sm">PNG, JPG, MP4, MOV</p>
+            </label>
+          </div>
+
+          {/* Media Grid */}
+          <div className="mt-6">
+            <h3 className="text-sm font-medium text-foreground mb-3">Gallery Media ({setMedia.length})</h3>
+            {loadingMedia ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
+              </div>
+            ) : setMedia.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">No media uploaded yet.</p>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {setMedia.map((media) => (
+                  <div key={media.id} className="relative group rounded-lg overflow-hidden bg-secondary">
+                    {media.type === "video" ? (
+                      <div className="aspect-square flex items-center justify-center bg-background">
+                        <Video className="w-8 h-8 text-muted-foreground" />
+                        <video src={media.url} className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    ) : (
+                      <img src={media.url} alt={media.alt_text || ""} className="aspect-square w-full object-cover" />
+                    )}
+                    
+                    {/* Overlay Actions */}
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleSetAsCover(media)}
+                        title="Set as cover"
+                      >
+                        <ImageIcon className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDeleteMedia(media.id)}
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+
+                    {/* Type badge */}
+                    <div className="absolute top-2 left-2 px-2 py-1 bg-background/80 rounded text-xs text-foreground">
+                      {media.type}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
