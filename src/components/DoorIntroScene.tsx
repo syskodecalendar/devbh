@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useEffect, useState, useRef } from "react";
-
+import devjiLogo from "@/assets/devji-logo.png";
 interface GoldParticle {
   id: number;
   x: number;
@@ -332,74 +332,58 @@ const DoorIntroScene = ({ onEnter }: DoorIntroSceneProps) => {
                 </motion.div>
               </div>
 
-              {/* Enter Button - positioned below the door frame */}
-              <motion.button
-                onClick={handleEnter}
-                disabled={isOpening}
-                className="absolute -bottom-24 left-1/2 -translate-x-1/2 px-10 py-3 font-serif text-base tracking-[0.15em] uppercase rounded-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden group z-10"
-                style={{
-                  background: "linear-gradient(135deg, hsl(43 65% 53%) 0%, hsl(43 70% 65%) 50%, hsl(43 65% 53%) 100%)",
-                  color: "hsl(0 6% 4%)",
-                  boxShadow: "0 0 30px hsl(43 65% 53% / 0.4), inset 0 1px 0 hsl(43 70% 65% / 0.5)",
-                  border: "1px solid hsl(43 70% 65% / 0.5)",
-                }}
-                whileHover={{ 
-                  scale: 1.05,
-                  boxShadow: "0 0 50px hsl(43 65% 53% / 0.6)",
-                }}
-                whileTap={{ scale: 0.98 }}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1.5, duration: 0.8 }}
-              >
-                <span className="relative z-10">Enter</span>
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                  animate={{ x: ["-100%", "100%"] }}
-                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
-                />
-              </motion.button>
             </motion.div>
           </motion.div>
 
-          {/* Brand name - positioned above everything */}
+          {/* Logo - positioned at top center */}
           <motion.div
-            className="absolute top-4 md:top-8 left-1/2 -translate-x-1/2 text-center z-20"
+            className="absolute top-6 md:top-10 left-0 right-0 flex justify-center z-20"
             initial={{ opacity: 0, y: -40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 1 }}
           >
-            <motion.h1 
-              className="text-4xl md:text-5xl lg:text-6xl font-serif tracking-wider"
+            <img 
+              src={devjiLogo} 
+              alt="Devji Since 1950" 
+              className="h-16 md:h-20 lg:h-24 w-auto"
+            />
+          </motion.div>
+
+          {/* Enter Button - fixed at bottom center */}
+          <motion.div
+            className="absolute bottom-16 md:bottom-20 left-0 right-0 flex justify-center z-20"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.5, duration: 0.8 }}
+          >
+            <motion.button
+              onClick={handleEnter}
+              disabled={isOpening}
+              className="px-10 py-3 font-serif text-base tracking-[0.15em] uppercase rounded-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
               style={{
                 background: "linear-gradient(135deg, hsl(43 65% 53%) 0%, hsl(43 70% 65%) 50%, hsl(43 65% 53%) 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
+                color: "hsl(0 6% 4%)",
+                boxShadow: "0 0 30px hsl(43 65% 53% / 0.4), inset 0 1px 0 hsl(43 70% 65% / 0.5)",
+                border: "1px solid hsl(43 70% 65% / 0.5)",
               }}
-              animate={{
-                textShadow: [
-                  "0 0 40px hsl(43 65% 53% / 0.3)",
-                  "0 0 80px hsl(43 65% 53% / 0.5)",
-                  "0 0 40px hsl(43 65% 53% / 0.3)",
-                ],
+              whileHover={{ 
+                scale: 1.05,
+                boxShadow: "0 0 50px hsl(43 65% 53% / 0.6)",
               }}
-              transition={{ duration: 3, repeat: Infinity }}
+              whileTap={{ scale: 0.98 }}
             >
-              Devji
-            </motion.h1>
-            <motion.p 
-              className="text-muted-foreground mt-2 tracking-[0.3em] uppercase text-xs"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.8 }}
-            >
-              Bridal World
-            </motion.p>
+              <span className="relative z-10">Enter</span>
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                animate={{ x: ["-100%", "100%"] }}
+                transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
+              />
+            </motion.button>
           </motion.div>
 
           {/* Bottom tagline */}
           <motion.p
-            className="absolute bottom-6 left-1/2 -translate-x-1/2 text-muted-foreground/50 text-xs tracking-[0.3em] uppercase"
+            className="absolute bottom-6 left-0 right-0 text-center text-muted-foreground/50 text-xs tracking-[0.3em] uppercase z-10"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 2 }}

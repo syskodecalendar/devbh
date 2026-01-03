@@ -4,6 +4,7 @@ import { Heart, Menu, X, Home } from "lucide-react";
 import { useState } from "react";
 import { useStore } from "@/store/useStore";
 import { Button } from "@/components/ui/button";
+import devjiLogo from "@/assets/devji-logo.png";
 
 const Header = () => {
   const location = useLocation();
@@ -26,15 +27,12 @@ const Header = () => {
       <div className="container mx-auto px-4 h-16 md:h-20 flex items-center justify-between">
         {/* Logo */}
         <Link to="/showroom" className="flex items-center gap-2">
-          <motion.h1
-            className="font-serif text-2xl md:text-3xl text-gold-gradient"
+          <motion.img
+            src={devjiLogo}
+            alt="Devji"
+            className="h-10 md:h-12 w-auto"
             whileHover={{ scale: 1.02 }}
-          >
-            Devji
-          </motion.h1>
-          <span className="hidden md:block text-muted-foreground text-xs tracking-widest uppercase">
-            Bridal World
-          </span>
+          />
         </Link>
 
         {/* Desktop Navigation */}
