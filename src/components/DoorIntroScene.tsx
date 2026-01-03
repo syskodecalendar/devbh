@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import devjiLogo from "@/assets/devji-logo.png";
+import GradientMeshBackground from "./GradientMeshBackground";
+
 interface GoldParticle {
   id: number;
   x: number;
@@ -124,6 +126,11 @@ const DoorIntroScene = ({ onEnter }: DoorIntroSceneProps) => {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5 }}
         >
+          {/* WebGL Gradient Mesh Background */}
+          <Suspense fallback={null}>
+            <GradientMeshBackground />
+          </Suspense>
+
           <GoldParticles />
           <LightRays />
           
@@ -131,7 +138,7 @@ const DoorIntroScene = ({ onEnter }: DoorIntroSceneProps) => {
           <div 
             className="absolute inset-0 pointer-events-none"
             style={{
-              background: "radial-gradient(ellipse at center, transparent 20%, hsl(0 6% 4% / 0.7) 70%, hsl(0 6% 4%) 100%)",
+              background: "radial-gradient(ellipse at center, transparent 20%, hsl(0 6% 4% / 0.5) 70%, hsl(0 6% 4% / 0.8) 100%)",
             }}
           />
 
