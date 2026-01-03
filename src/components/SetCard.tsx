@@ -42,7 +42,7 @@ const SetCard = ({ set, index = 0, featured = false }: SetCardProps) => {
       onClick={() => navigate(`/set/${set.id}`)}
     >
       {/* Image container */}
-      <div className="relative h-2/3 overflow-hidden bg-card">
+      <div className="relative h-2/3 overflow-hidden bg-secondary">
         <motion.div
           className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-card z-10"
           initial={{ opacity: 0 }}
@@ -52,8 +52,7 @@ const SetCard = ({ set, index = 0, featured = false }: SetCardProps) => {
         <img
           src={set.coverImage}
           alt={set.name}
-          className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105 p-2"
-          style={{ mixBlendMode: "multiply" }}
+          className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105 p-4"
         />
         
         {/* Shortlist button */}
