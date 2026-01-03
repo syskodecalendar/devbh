@@ -336,20 +336,20 @@ const DoorIntroScene = ({ onEnter }: DoorIntroSceneProps) => {
     setTimeout(() => {
       setShowLightBeam(true);
       setShake(true);
-      setTimeout(() => setShake(false), 300);
+      setTimeout(() => setShake(false), 250);
     }, 100);
     
-    // Start slow cinematic move forward
-    setTimeout(() => setCinematicPhase(2), 800);
+    // Start very slow cinematic drift forward
+    setTimeout(() => setCinematicPhase(2), 1200);
     
-    // Fade out
-    setTimeout(() => setCinematicPhase(3), 2800);
+    // Fade out slowly
+    setTimeout(() => setCinematicPhase(3), 5500);
     
     // Complete
     setTimeout(() => {
       setShowContent(false);
       onEnter();
-    }, 3500);
+    }, 7000);
   };
 
   return (
@@ -378,55 +378,55 @@ const DoorIntroScene = ({ onEnter }: DoorIntroSceneProps) => {
             }}
           />
 
-          {/* WebGL Gradient Mesh Background - moves slower for parallax */}
+          {/* WebGL Gradient Mesh Background - very slow drift for depth */}
           <motion.div
             className="absolute inset-0"
             animate={{
-              scale: cinematicPhase === 0 ? 1 : cinematicPhase === 1 ? 1.02 : cinematicPhase === 2 ? 1.2 : 1.5,
+              scale: cinematicPhase === 0 ? 1 : cinematicPhase === 1 ? 1.01 : cinematicPhase === 2 ? 1.12 : 1.3,
             }}
-            transition={{ duration: 2, ease: [0.25, 0.1, 0.25, 1] }}
+            transition={{ duration: 5, ease: [0.16, 0.85, 0.35, 1] }}
           >
             <Suspense fallback={null}>
               <GradientMeshBackground />
             </Suspense>
           </motion.div>
 
-          {/* Particles layer - moves at medium speed */}
+          {/* Particles layer - gentle drift */}
           <motion.div
             className="absolute inset-0"
             animate={{
-              scale: cinematicPhase === 0 ? 1 : cinematicPhase === 1 ? 1.03 : cinematicPhase === 2 ? 1.4 : 1.8,
+              scale: cinematicPhase === 0 ? 1 : cinematicPhase === 1 ? 1.02 : cinematicPhase === 2 ? 1.25 : 1.5,
               opacity: cinematicPhase >= 3 ? 0 : 1,
             }}
-            transition={{ duration: 2, ease: [0.25, 0.1, 0.25, 1] }}
+            transition={{ duration: 4.5, ease: [0.16, 0.85, 0.35, 1] }}
           >
             <GoldParticles mousePosition={mousePosition} />
           </motion.div>
           
-          {/* Light rays - moves faster for depth */}
+          {/* Light rays - slightly faster for parallax depth */}
           <motion.div
             className="absolute inset-0"
             animate={{
-              scale: cinematicPhase === 0 ? 1 : cinematicPhase === 1 ? 1.05 : cinematicPhase === 2 ? 1.6 : 2,
+              scale: cinematicPhase === 0 ? 1 : cinematicPhase === 1 ? 1.03 : cinematicPhase === 2 ? 1.35 : 1.7,
               opacity: cinematicPhase >= 3 ? 0 : 1,
             }}
-            transition={{ duration: 1.8, ease: [0.25, 0.1, 0.25, 1] }}
+            transition={{ duration: 4, ease: [0.16, 0.85, 0.35, 1] }}
           >
             <AmbientLightRays />
           </motion.div>
           
           <DoorLightBeam isActive={showLightBeam} />
           
-          {/* Deep cinematic vignette */}
+          {/* Deep cinematic vignette - slowly opens up */}
           <motion.div 
             className="absolute inset-0 pointer-events-none"
             style={{
               background: "radial-gradient(ellipse at center, transparent 15%, hsl(0 5% 3% / 0.4) 50%, hsl(0 5% 3% / 0.85) 100%)",
             }}
             animate={{
-              opacity: cinematicPhase >= 2 ? 0.4 : 1,
+              opacity: cinematicPhase >= 2 ? 0.5 : 1,
             }}
-            transition={{ duration: 1.5 }}
+            transition={{ duration: 3 }}
           />
 
           {/* Cinematic letterbox bars */}
@@ -454,7 +454,7 @@ const DoorIntroScene = ({ onEnter }: DoorIntroSceneProps) => {
             transition={{ duration: 0.8, ease: "easeInOut" }}
           />
 
-          {/* 3D Scene Container - Smooth cinematic camera */}
+          {/* 3D Scene Container - Ultra slow cinematic camera drift */}
           <motion.div
             className="relative"
             style={{ 
@@ -462,11 +462,12 @@ const DoorIntroScene = ({ onEnter }: DoorIntroSceneProps) => {
               perspectiveOrigin: "center center",
             }}
             animate={{
-              scale: cinematicPhase === 0 ? 1 : cinematicPhase === 1 ? 1.1 : cinematicPhase === 2 ? 2.2 : 4,
+              scale: cinematicPhase === 0 ? 1 : cinematicPhase === 1 ? 1.05 : cinematicPhase === 2 ? 1.8 : 3,
+              y: cinematicPhase === 0 ? 0 : cinematicPhase === 1 ? -5 : cinematicPhase === 2 ? -20 : -40,
             }}
             transition={{ 
-              duration: cinematicPhase === 2 ? 2 : 0.8,
-              ease: [0.25, 0.1, 0.25, 1],
+              duration: cinematicPhase === 2 ? 4.5 : cinematicPhase === 3 ? 2 : 1.2,
+              ease: [0.16, 0.85, 0.35, 1], // Very smooth cinematic ease
             }}
           >
             {/* Door Frame with 3D Transform */}
