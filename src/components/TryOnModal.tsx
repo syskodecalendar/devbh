@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import necklaceOverlay from "@/assets/jewelry/necklace-overlay.png";
+import necklaceOverlay from "@/assets/jewelry/necklace-overlay.webp";
 interface TryOnModalProps {
   open: boolean;
   onClose: () => void;
