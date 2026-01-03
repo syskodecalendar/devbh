@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { useEffect, useState, useRef, Suspense } from "react";
 import devjiLogo from "@/assets/devji-logo.png";
 import GradientMeshBackground from "./GradientMeshBackground";
+import { playSparkleSound, playDoorCreakSound } from "@/lib/sounds";
 
 interface GoldParticle {
   id: number;
@@ -170,12 +171,16 @@ const DoorIntroScene = ({ onEnter }: DoorIntroSceneProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleEnter = () => {
+    // Play sparkle sound immediately
+    playSparkleSound();
+    
     setShowBurst(true);
     setIsOpening(true);
     setZoomPhase("zoom");
     
-    // Trigger camera shake when doors start opening
+    // Play door creak sound and trigger camera shake
     setTimeout(() => {
+      playDoorCreakSound();
       setShake(true);
       setTimeout(() => setShake(false), 500);
     }, 200);

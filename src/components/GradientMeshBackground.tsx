@@ -122,9 +122,10 @@ interface GlowOrbsProps {
 
 const GlowOrbs = ({ mousePosition }: GlowOrbsProps) => {
   const orbsRef = useRef<THREE.Group>(null);
+  const targetPositions = useRef<{ x: number; y: number }[]>([]);
   
-  const orbs = useMemo(() => 
-    Array.from({ length: 8 }, (_, i) => ({
+  const orbs = useMemo(() => {
+    const orbData = Array.from({ length: 8 }, (_, i) => ({
       position: [
         (Math.random() - 0.5) * 6,
         (Math.random() - 0.5) * 6,
@@ -133,26 +134,48 @@ const GlowOrbs = ({ mousePosition }: GlowOrbsProps) => {
       scale: Math.random() * 0.3 + 0.1,
       speed: Math.random() * 0.5 + 0.2,
       offset: Math.random() * Math.PI * 2,
-    })), []);
+      followDelay: i * 0.15, // Staggered delay for trailing effect
+    }));
+    targetPositions.current = orbData.map(() => ({ x: 0, y: 0 }));
+    return orbData;
+  }, []);
 
   useFrame(({ clock }) => {
     if (orbsRef.current) {
-      const mouseX = (mousePosition.x - 0.5) * 2;
-      const mouseY = (mousePosition.y - 0.5) * -2;
+      const mouseX = (mousePosition.x - 0.5) * 4;
+      const mouseY = (mousePosition.y - 0.5) * -4;
       
       orbsRef.current.children.forEach((orb, i) => {
         const data = orbs[i];
-        const baseY = data.position[1] + Math.sin(clock.elapsedTime * data.speed + data.offset) * 0.5;
-        const baseX = data.position[0] + Math.cos(clock.elapsedTime * data.speed * 0.7 + data.offset) * 0.3;
         
-        // Subtle mouse repulsion
-        const dx = baseX - mouseX;
-        const dy = baseY - mouseY;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const repulsion = Math.exp(-dist * 0.5) * 0.3;
+        // Calculate target based on mouse with delay offset
+        const delayFactor = Math.max(0.02, 0.12 - data.followDelay * 0.3);
+        const target = targetPositions.current[i];
         
-        orb.position.x = baseX + (dx / (dist + 0.1)) * repulsion;
-        orb.position.y = baseY + (dy / (dist + 0.1)) * repulsion;
+        // Previous orb position for trailing, or mouse for first
+        const leaderX = i === 0 ? mouseX : targetPositions.current[i - 1].x;
+        const leaderY = i === 0 ? mouseY : targetPositions.current[i - 1].y;
+        
+        // Smooth follow with trailing
+        target.x += (leaderX - target.x) * delayFactor;
+        target.y += (leaderY - target.y) * delayFactor;
+        
+        // Add subtle floating motion
+        const floatX = Math.cos(clock.elapsedTime * data.speed * 0.7 + data.offset) * 0.2;
+        const floatY = Math.sin(clock.elapsedTime * data.speed + data.offset) * 0.2;
+        
+        // Offset from leader to spread out
+        const spreadAngle = (i / orbs.length) * Math.PI * 2;
+        const spreadRadius = 0.8 + i * 0.15;
+        const spreadX = Math.cos(spreadAngle + clock.elapsedTime * 0.3) * spreadRadius;
+        const spreadY = Math.sin(spreadAngle + clock.elapsedTime * 0.3) * spreadRadius;
+        
+        orb.position.x = target.x + floatX + spreadX;
+        orb.position.y = target.y + floatY + spreadY;
+        
+        // Pulse scale based on movement
+        const velocity = Math.abs(leaderX - target.x) + Math.abs(leaderY - target.y);
+        orb.scale.setScalar(data.scale * (1 + velocity * 0.5));
       });
     }
   });
@@ -165,7 +188,7 @@ const GlowOrbs = ({ mousePosition }: GlowOrbsProps) => {
           <meshBasicMaterial
             color={0xd4a373}
             transparent
-            opacity={0.15}
+            opacity={0.2 - i * 0.015}
           />
         </mesh>
       ))}
