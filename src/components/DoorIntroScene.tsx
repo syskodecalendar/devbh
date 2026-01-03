@@ -307,17 +307,14 @@ interface DoorIntroSceneProps {
   onEnter: () => void;
 }
 
-// Cinematic camera movement phases
-type CameraPhase = "idle" | "dolly_start" | "dolly_through" | "dolly_complete" | "fade_out";
-
 const DoorIntroScene = ({ onEnter }: DoorIntroSceneProps) => {
   const [isOpening, setIsOpening] = useState(false);
   const [showContent, setShowContent] = useState(true);
-  const [cameraPhase, setCameraPhase] = useState<CameraPhase>("idle");
   const [showBurst, setShowBurst] = useState(false);
   const [showLightBeam, setShowLightBeam] = useState(false);
   const [shake, setShake] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0.5, y: 0.5 });
+  const [cinematicPhase, setCinematicPhase] = useState(0); // 0=idle, 1=doors opening, 2=slow move, 3=fade
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
@@ -333,35 +330,26 @@ const DoorIntroScene = ({ onEnter }: DoorIntroSceneProps) => {
   const handleEnter = () => {
     setShowBurst(true);
     setIsOpening(true);
-    setCameraPhase("dolly_start");
+    setCinematicPhase(1);
     
-    // Trigger light beam and subtle camera shake
+    // Subtle shake
     setTimeout(() => {
       setShowLightBeam(true);
       setShake(true);
-      setTimeout(() => setShake(false), 400);
-    }, 200);
+      setTimeout(() => setShake(false), 300);
+    }, 100);
     
-    // Begin slow dolly through doors
-    setTimeout(() => {
-      setCameraPhase("dolly_through");
-    }, 1200);
+    // Start slow cinematic move forward
+    setTimeout(() => setCinematicPhase(2), 800);
     
-    // Complete the dolly movement
-    setTimeout(() => {
-      setCameraPhase("dolly_complete");
-    }, 3500);
+    // Fade out
+    setTimeout(() => setCinematicPhase(3), 2800);
     
-    // Final fade out
-    setTimeout(() => {
-      setCameraPhase("fade_out");
-    }, 4800);
-    
-    // Complete transition
+    // Complete
     setTimeout(() => {
       setShowContent(false);
-      setTimeout(onEnter, 300);
-    }, 5500);
+      onEnter();
+    }, 3500);
   };
 
   return (
@@ -394,12 +382,9 @@ const DoorIntroScene = ({ onEnter }: DoorIntroSceneProps) => {
           <motion.div
             className="absolute inset-0"
             animate={{
-              scale: cameraPhase === "idle" ? 1 
-                : cameraPhase === "dolly_start" ? 1.02
-                : cameraPhase === "dolly_through" ? 1.3
-                : 1.8,
+              scale: cinematicPhase === 0 ? 1 : cinematicPhase === 1 ? 1.02 : cinematicPhase === 2 ? 1.2 : 1.5,
             }}
-            transition={{ duration: 3, ease: [0.25, 0.1, 0.25, 1] }}
+            transition={{ duration: 2, ease: [0.25, 0.1, 0.25, 1] }}
           >
             <Suspense fallback={null}>
               <GradientMeshBackground />
@@ -410,13 +395,10 @@ const DoorIntroScene = ({ onEnter }: DoorIntroSceneProps) => {
           <motion.div
             className="absolute inset-0"
             animate={{
-              scale: cameraPhase === "idle" ? 1 
-                : cameraPhase === "dolly_start" ? 1.03
-                : cameraPhase === "dolly_through" ? 1.6
-                : 2.2,
-              opacity: cameraPhase === "dolly_complete" || cameraPhase === "fade_out" ? 0 : 1,
+              scale: cinematicPhase === 0 ? 1 : cinematicPhase === 1 ? 1.03 : cinematicPhase === 2 ? 1.4 : 1.8,
+              opacity: cinematicPhase >= 3 ? 0 : 1,
             }}
-            transition={{ duration: 2.5, ease: [0.25, 0.1, 0.25, 1] }}
+            transition={{ duration: 2, ease: [0.25, 0.1, 0.25, 1] }}
           >
             <GoldParticles mousePosition={mousePosition} />
           </motion.div>
@@ -425,85 +407,66 @@ const DoorIntroScene = ({ onEnter }: DoorIntroSceneProps) => {
           <motion.div
             className="absolute inset-0"
             animate={{
-              scale: cameraPhase === "idle" ? 1 
-                : cameraPhase === "dolly_start" ? 1.04
-                : cameraPhase === "dolly_through" ? 1.8
-                : 2.5,
-              opacity: cameraPhase === "dolly_complete" || cameraPhase === "fade_out" ? 0 : 1,
+              scale: cinematicPhase === 0 ? 1 : cinematicPhase === 1 ? 1.05 : cinematicPhase === 2 ? 1.6 : 2,
+              opacity: cinematicPhase >= 3 ? 0 : 1,
             }}
-            transition={{ duration: 2.2, ease: [0.25, 0.1, 0.25, 1] }}
+            transition={{ duration: 1.8, ease: [0.25, 0.1, 0.25, 1] }}
           >
             <AmbientLightRays />
           </motion.div>
           
           <DoorLightBeam isActive={showLightBeam} />
           
-          {/* Deep cinematic vignette - intensifies during dolly */}
+          {/* Deep cinematic vignette */}
           <motion.div 
             className="absolute inset-0 pointer-events-none"
             style={{
               background: "radial-gradient(ellipse at center, transparent 15%, hsl(0 5% 3% / 0.4) 50%, hsl(0 5% 3% / 0.85) 100%)",
             }}
             animate={{
-              opacity: cameraPhase === "dolly_through" || cameraPhase === "dolly_complete" ? 0.3 : 1,
+              opacity: cinematicPhase >= 2 ? 0.4 : 1,
             }}
-            transition={{ duration: 2 }}
+            transition={{ duration: 1.5 }}
           />
 
           {/* Cinematic letterbox bars */}
           <motion.div
             className="absolute top-0 left-0 right-0 bg-black z-40"
             initial={{ height: 0 }}
-            animate={{ 
-              height: cameraPhase !== "idle" ? "8vh" : 0 
-            }}
-            transition={{ duration: 1.5, ease: [0.4, 0, 0.2, 1] }}
+            animate={{ height: cinematicPhase >= 1 ? "6vh" : 0 }}
+            transition={{ duration: 1, ease: [0.4, 0, 0.2, 1] }}
           />
           <motion.div
             className="absolute bottom-0 left-0 right-0 bg-black z-40"
             initial={{ height: 0 }}
-            animate={{ 
-              height: cameraPhase !== "idle" ? "8vh" : 0 
-            }}
-            transition={{ duration: 1.5, ease: [0.4, 0, 0.2, 1] }}
+            animate={{ height: cinematicPhase >= 1 ? "6vh" : 0 }}
+            transition={{ duration: 1, ease: [0.4, 0, 0.2, 1] }}
           />
 
-          {/* Slow cinematic fade to white/gold at the end */}
+          {/* Slow cinematic fade to gold at the end */}
           <motion.div
             className="absolute inset-0 pointer-events-none z-50"
             style={{
               background: "radial-gradient(ellipse at center, hsl(43 60% 90%) 0%, hsl(43 50% 95%) 100%)",
             }}
             initial={{ opacity: 0 }}
-            animate={{ 
-              opacity: cameraPhase === "fade_out" ? 1 : 0 
-            }}
-            transition={{ duration: 1.2, ease: "easeInOut" }}
+            animate={{ opacity: cinematicPhase >= 3 ? 1 : 0 }}
+            transition={{ duration: 0.8, ease: "easeInOut" }}
           />
 
-          {/* 3D Scene Container - Cinematic Dolly Camera */}
+          {/* 3D Scene Container - Smooth cinematic camera */}
           <motion.div
             className="relative"
             style={{ 
-              perspective: "2000px",
+              perspective: "1500px",
               perspectiveOrigin: "center center",
             }}
             animate={{
-              scale: cameraPhase === "idle" ? 1 
-                : cameraPhase === "dolly_start" ? 1.05
-                : cameraPhase === "dolly_through" ? 2.5
-                : cameraPhase === "dolly_complete" ? 4.5
-                : 6,
-              z: cameraPhase === "idle" ? 0 
-                : cameraPhase === "dolly_start" ? 50
-                : cameraPhase === "dolly_through" ? 400
-                : 800,
+              scale: cinematicPhase === 0 ? 1 : cinematicPhase === 1 ? 1.1 : cinematicPhase === 2 ? 2.2 : 4,
             }}
             transition={{ 
-              duration: cameraPhase === "dolly_through" ? 2.5 
-                : cameraPhase === "dolly_complete" ? 1.5 
-                : 1,
-              ease: [0.25, 0.1, 0.25, 1], // Cinematic easing
+              duration: cinematicPhase === 2 ? 2 : 0.8,
+              ease: [0.25, 0.1, 0.25, 1],
             }}
           >
             {/* Door Frame with 3D Transform */}
