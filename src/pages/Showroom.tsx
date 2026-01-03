@@ -1,30 +1,47 @@
 import { motion } from "framer-motion";
+import { useRef } from "react";
 import Header from "@/components/Header";
 import SetCardDB from "@/components/SetCardDB";
 import { useFeaturedSets } from "@/hooks/useJewelrySets";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, ChevronDown } from "lucide-react";
+import heroVideo from "@/assets/jewelry/maroon-majesty-video1.mp4";
 
 const Showroom = () => {
   const { data: featuredSets, isLoading } = useFeaturedSets();
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  const scrollToContent = () => {
+    contentRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   return (
     <div className="min-h-screen bg-velvet">
       <Header />
 
-      {/* Hero Section */}
-      <section className="relative pt-32 pb-20 md:pt-40 md:pb-32 overflow-hidden">
-        {/* Background effects */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_hsl(var(--primary)_/_0.08),_transparent_50%)]" />
-        <div className="absolute top-20 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
+      {/* Fullscreen Video Hero */}
+      <section className="relative h-screen w-full overflow-hidden">
+        {/* Video Background */}
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src={heroVideo} type="video/mp4" />
+        </video>
 
-        <div className="container mx-auto px-4 text-center relative z-10">
+        {/* Dark Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/40 to-background" />
+
+        {/* Content Overlay */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 1, delay: 0.5 }}
           >
             <div className="flex items-center justify-center gap-2 mb-6">
               <Sparkles className="w-5 h-5 text-primary" />
@@ -39,7 +56,7 @@ const Showroom = () => {
               <span className="block text-gold-gradient mt-2">Bridal Masterpieces</span>
             </h1>
 
-            <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto mb-10">
+            <p className="text-foreground/80 text-lg md:text-xl max-w-2xl mx-auto mb-10">
               Discover our finest selection of handcrafted gold sets, each piece
               telling a story of timeless elegance and unmatched craftsmanship.
             </p>
@@ -52,7 +69,35 @@ const Showroom = () => {
             </Link>
           </motion.div>
         </div>
+
+        {/* Scroll Down Indicator */}
+        <motion.button
+          onClick={scrollToContent}
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 text-foreground/70 hover:text-primary transition-colors cursor-pointer"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.5, duration: 0.5 }}
+        >
+          <motion.div
+            animate={{ y: [0, 8, 0] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+            className="flex flex-col items-center gap-2"
+          >
+            <span className="text-xs tracking-widest uppercase">Scroll</span>
+            <ChevronDown className="w-6 h-6" />
+          </motion.div>
+        </motion.button>
       </section>
+
+      {/* Content Section */}
+      <div ref={contentRef}>
+        {/* Hero Section */}
+        <section className="relative pt-20 pb-16 md:pt-24 md:pb-20 overflow-hidden">
+          {/* Background effects */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_hsl(var(--primary)_/_0.08),_transparent_50%)]" />
+          <div className="absolute top-20 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
+        </section>
 
       {/* Featured Sets Grid */}
       <section className="py-16 md:py-24">
@@ -133,6 +178,7 @@ const Showroom = () => {
           </p>
         </div>
       </footer>
+      </div>
     </div>
   );
 };
