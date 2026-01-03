@@ -312,9 +312,7 @@ const DoorIntroScene = ({ onEnter }: DoorIntroSceneProps) => {
   const [showContent, setShowContent] = useState(true);
   const [showBurst, setShowBurst] = useState(false);
   const [showLightBeam, setShowLightBeam] = useState(false);
-  const [shake, setShake] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0.5, y: 0.5 });
-  const [cinematicPhase, setCinematicPhase] = useState(0); // 0=idle, 1=doors opening, 2=slow move, 3=fade
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
@@ -330,26 +328,17 @@ const DoorIntroScene = ({ onEnter }: DoorIntroSceneProps) => {
   const handleEnter = () => {
     setShowBurst(true);
     setIsOpening(true);
-    setCinematicPhase(1);
     
-    // Subtle shake
+    // Show light beam when doors open
     setTimeout(() => {
       setShowLightBeam(true);
-      setShake(true);
-      setTimeout(() => setShake(false), 250);
-    }, 100);
+    }, 200);
     
-    // Start very slow cinematic drift forward
-    setTimeout(() => setCinematicPhase(2), 1200);
-    
-    // Fade out slowly
-    setTimeout(() => setCinematicPhase(3), 5500);
-    
-    // Complete
+    // Fade out and transition to website
     setTimeout(() => {
       setShowContent(false);
       onEnter();
-    }, 7000);
+    }, 1800);
   };
 
   return (
@@ -364,13 +353,10 @@ const DoorIntroScene = ({ onEnter }: DoorIntroSceneProps) => {
           }}
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          animate={shake ? {
-            x: [0, -2, 2, -1.5, 1.5, -0.5, 0.5, 0],
-            y: [0, 1, -1, 0.5, -0.5, 0],
-          } : {}}
-          transition={shake ? { duration: 0.4, ease: "easeOut" } : { duration: 0.5 }}
+          animate={isOpening ? { opacity: 0 } : { opacity: 1 }}
+          transition={{ duration: 0.8, delay: isOpening ? 1 : 0 }}
         >
-          {/* Film grain overlay for cinematic feel */}
+          {/* Film grain overlay */}
           <div 
             className="absolute inset-0 pointer-events-none opacity-[0.03] mix-blend-overlay"
             style={{
@@ -378,96 +364,29 @@ const DoorIntroScene = ({ onEnter }: DoorIntroSceneProps) => {
             }}
           />
 
-          {/* WebGL Gradient Mesh Background - very slow drift for depth */}
-          <motion.div
-            className="absolute inset-0"
-            animate={{
-              scale: cinematicPhase === 0 ? 1 : cinematicPhase === 1 ? 1.01 : cinematicPhase === 2 ? 1.12 : 1.3,
-            }}
-            transition={{ duration: 5, ease: [0.16, 0.85, 0.35, 1] }}
-          >
-            <Suspense fallback={null}>
-              <GradientMeshBackground />
-            </Suspense>
-          </motion.div>
+          {/* Background */}
+          <Suspense fallback={null}>
+            <GradientMeshBackground />
+          </Suspense>
 
-          {/* Particles layer - gentle drift */}
-          <motion.div
-            className="absolute inset-0"
-            animate={{
-              scale: cinematicPhase === 0 ? 1 : cinematicPhase === 1 ? 1.02 : cinematicPhase === 2 ? 1.25 : 1.5,
-              opacity: cinematicPhase >= 3 ? 0 : 1,
-            }}
-            transition={{ duration: 4.5, ease: [0.16, 0.85, 0.35, 1] }}
-          >
-            <GoldParticles mousePosition={mousePosition} />
-          </motion.div>
-          
-          {/* Light rays - slightly faster for parallax depth */}
-          <motion.div
-            className="absolute inset-0"
-            animate={{
-              scale: cinematicPhase === 0 ? 1 : cinematicPhase === 1 ? 1.03 : cinematicPhase === 2 ? 1.35 : 1.7,
-              opacity: cinematicPhase >= 3 ? 0 : 1,
-            }}
-            transition={{ duration: 4, ease: [0.16, 0.85, 0.35, 1] }}
-          >
-            <AmbientLightRays />
-          </motion.div>
-          
+          <GoldParticles mousePosition={mousePosition} />
+          <AmbientLightRays />
           <DoorLightBeam isActive={showLightBeam} />
           
-          {/* Deep cinematic vignette - slowly opens up */}
-          <motion.div 
+          {/* Vignette */}
+          <div 
             className="absolute inset-0 pointer-events-none"
             style={{
               background: "radial-gradient(ellipse at center, transparent 15%, hsl(0 5% 3% / 0.4) 50%, hsl(0 5% 3% / 0.85) 100%)",
             }}
-            animate={{
-              opacity: cinematicPhase >= 2 ? 0.5 : 1,
-            }}
-            transition={{ duration: 3 }}
           />
 
-          {/* Cinematic letterbox bars */}
-          <motion.div
-            className="absolute top-0 left-0 right-0 bg-black z-40"
-            initial={{ height: 0 }}
-            animate={{ height: cinematicPhase >= 1 ? "6vh" : 0 }}
-            transition={{ duration: 1, ease: [0.4, 0, 0.2, 1] }}
-          />
-          <motion.div
-            className="absolute bottom-0 left-0 right-0 bg-black z-40"
-            initial={{ height: 0 }}
-            animate={{ height: cinematicPhase >= 1 ? "6vh" : 0 }}
-            transition={{ duration: 1, ease: [0.4, 0, 0.2, 1] }}
-          />
-
-          {/* Slow cinematic fade to gold at the end */}
-          <motion.div
-            className="absolute inset-0 pointer-events-none z-50"
-            style={{
-              background: "radial-gradient(ellipse at center, hsl(43 60% 90%) 0%, hsl(43 50% 95%) 100%)",
-            }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: cinematicPhase >= 3 ? 1 : 0 }}
-            transition={{ duration: 0.8, ease: "easeInOut" }}
-          />
-
-          {/* 3D Scene Container - Ultra slow cinematic camera drift */}
+          {/* 3D Scene Container */}
           <motion.div
             className="relative"
             style={{ 
               perspective: "1500px",
               perspectiveOrigin: "center center",
-            }}
-            animate={{
-              scale: cinematicPhase === 0 ? 1 : cinematicPhase === 1 ? 1.05 : cinematicPhase === 2 ? 1.8 : 3,
-              y: cinematicPhase === 0 ? 0 : cinematicPhase === 1 ? -5 : cinematicPhase === 2 ? -20 : -40,
-            }}
-            transition={{ 
-              duration: cinematicPhase === 2 ? 4.5 : cinematicPhase === 3 ? 2 : 1.2,
-              ease: [0.16, 0.85, 0.35, 1], // Very smooth cinematic ease
             }}
           >
             {/* Door Frame with 3D Transform */}
