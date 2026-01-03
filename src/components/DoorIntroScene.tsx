@@ -1,37 +1,101 @@
 import { motion } from "framer-motion";
-import { useEffect, useState, useRef, Suspense } from "react";
+import { useEffect, useState, useRef, Suspense, useCallback } from "react";
 import devjiLogo from "@/assets/devji-logo.png";
 import GradientMeshBackground from "./GradientMeshBackground";
-import { playSparkleSound, playDoorCreakSound } from "@/lib/sounds";
+import { playSparkleSound } from "@/lib/sounds";
 
 interface GoldParticle {
   id: number;
   x: number;
   y: number;
+  vx: number;
+  vy: number;
   size: number;
-  duration: number;
-  delay: number;
+  baseX: number;
+  baseY: number;
+  phase: number;
 }
 
-const GoldParticles = () => {
+interface GoldParticlesProps {
+  mousePosition: { x: number; y: number };
+}
+
+const GoldParticles = ({ mousePosition }: GoldParticlesProps) => {
   const [particles, setParticles] = useState<GoldParticle[]>([]);
+  const animationRef = useRef<number>();
 
   useEffect(() => {
-    const newParticles: GoldParticle[] = Array.from({ length: 50 }, (_, i) => ({
+    const newParticles: GoldParticle[] = Array.from({ length: 60 }, (_, i) => ({
       id: i,
       x: Math.random() * 100,
       y: Math.random() * 100,
-      size: Math.random() * 6 + 2,
-      duration: Math.random() * 4 + 3,
-      delay: Math.random() * 2,
+      vx: 0,
+      vy: 0,
+      size: Math.random() * 4 + 1.5,
+      baseX: Math.random() * 100,
+      baseY: Math.random() * 100,
+      phase: Math.random() * Math.PI * 2,
     }));
     setParticles(newParticles);
   }, []);
 
+  useEffect(() => {
+    let lastTime = performance.now();
+    
+    const animate = (currentTime: number) => {
+      const delta = (currentTime - lastTime) / 1000;
+      lastTime = currentTime;
+      
+      setParticles(prev => prev.map(p => {
+        // Mouse repulsion
+        const dx = p.x - mousePosition.x * 100;
+        const dy = p.y - mousePosition.y * 100;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const repulsionRadius = 15;
+        const repulsionStrength = 80;
+        
+        let fx = 0, fy = 0;
+        if (dist < repulsionRadius && dist > 0) {
+          const force = (1 - dist / repulsionRadius) * repulsionStrength;
+          fx = (dx / dist) * force;
+          fy = (dy / dist) * force;
+        }
+        
+        // Gentle drift back to base with floating motion
+        const time = currentTime * 0.0003;
+        const targetX = p.baseX + Math.sin(time + p.phase) * 3;
+        const targetY = p.baseY + Math.cos(time * 0.7 + p.phase) * 4;
+        
+        const returnForce = 0.8;
+        fx += (targetX - p.x) * returnForce;
+        fy += (targetY - p.y) * returnForce;
+        
+        // Apply velocity with damping
+        const newVx = (p.vx + fx * delta) * 0.95;
+        const newVy = (p.vy + fy * delta) * 0.95;
+        
+        return {
+          ...p,
+          x: Math.max(0, Math.min(100, p.x + newVx * delta * 60)),
+          y: Math.max(0, Math.min(100, p.y + newVy * delta * 60)),
+          vx: newVx,
+          vy: newVy,
+        };
+      }));
+      
+      animationRef.current = requestAnimationFrame(animate);
+    };
+    
+    animationRef.current = requestAnimationFrame(animate);
+    return () => {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    };
+  }, [mousePosition]);
+
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       {particles.map((particle) => (
-        <motion.div
+        <div
           key={particle.id}
           className="absolute rounded-full"
           style={{
@@ -39,18 +103,38 @@ const GoldParticles = () => {
             top: `${particle.y}%`,
             width: particle.size,
             height: particle.size,
-            background: `radial-gradient(circle, hsl(var(--primary)) 0%, transparent 70%)`,
-            boxShadow: `0 0 ${particle.size * 2}px hsl(var(--primary) / 0.5)`,
+            background: `radial-gradient(circle, hsl(43 70% 70%) 0%, hsl(43 60% 50%) 40%, transparent 70%)`,
+            boxShadow: `0 0 ${particle.size * 3}px hsl(43 65% 55% / 0.6)`,
+            transform: 'translate(-50%, -50%)',
+            transition: 'none',
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
+// Cinematic ambient light rays
+const AmbientLightRays = () => {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-40">
+      {[...Array(7)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute h-full"
+          style={{
+            left: `${10 + i * 12}%`,
+            width: '2px',
+            background: `linear-gradient(to bottom, transparent 0%, hsl(43 50% 45% / 0.15) 30%, hsl(43 50% 45% / 0.08) 70%, transparent 100%)`,
+            filter: 'blur(1px)',
           }}
           animate={{
-            y: [-30, 30, -30],
-            x: [-10, 10, -10],
-            opacity: [0, 0.8, 0],
-            scale: [0.5, 1.2, 0.5],
+            opacity: [0.3, 0.7, 0.3],
+            scaleY: [0.9, 1, 0.9],
           }}
           transition={{
-            duration: particle.duration,
-            delay: particle.delay,
+            duration: 4 + i * 0.8,
+            delay: i * 0.4,
             repeat: Infinity,
             ease: "easeInOut",
           }}
@@ -60,27 +144,89 @@ const GoldParticles = () => {
   );
 };
 
-// Floating light rays
-const LightRays = () => {
+// Dramatic light beam that shoots through doors
+const DoorLightBeam = ({ isActive }: { isActive: boolean }) => {
+  if (!isActive) return null;
+  
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {[...Array(5)].map((_, i) => (
+    <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden">
+      {/* Main central beam */}
+      <motion.div
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 origin-center"
+        style={{
+          width: '200px',
+          height: '800px',
+          background: `linear-gradient(to bottom, 
+            transparent 0%,
+            hsl(43 70% 65% / 0.03) 20%,
+            hsl(43 70% 65% / 0.15) 40%,
+            hsl(43 80% 70% / 0.25) 50%,
+            hsl(43 70% 65% / 0.15) 60%,
+            hsl(43 70% 65% / 0.03) 80%,
+            transparent 100%
+          )`,
+          filter: 'blur(8px)',
+        }}
+        initial={{ scaleY: 0, opacity: 0, y: '-50%' }}
+        animate={{ scaleY: 1, opacity: 1, y: '-50%' }}
+        transition={{ duration: 1.2, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+      />
+      
+      {/* Intense core beam */}
+      <motion.div
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 origin-center"
+        style={{
+          width: '60px',
+          height: '600px',
+          background: `linear-gradient(to bottom, 
+            transparent 0%,
+            hsl(43 80% 75% / 0.2) 30%,
+            hsl(43 90% 80% / 0.4) 50%,
+            hsl(43 80% 75% / 0.2) 70%,
+            transparent 100%
+          )`,
+          filter: 'blur(4px)',
+        }}
+        initial={{ scaleY: 0, opacity: 0, y: '-50%' }}
+        animate={{ scaleY: 1, opacity: 1, y: '-50%' }}
+        transition={{ duration: 1, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      />
+      
+      {/* Horizontal light spread */}
+      <motion.div
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+        style={{
+          width: '100vw',
+          height: '300px',
+          background: `radial-gradient(ellipse 50% 100% at center, 
+            hsl(43 70% 65% / 0.12) 0%,
+            hsl(43 60% 55% / 0.06) 40%,
+            transparent 70%
+          )`,
+        }}
+        initial={{ scaleX: 0, opacity: 0 }}
+        animate={{ scaleX: 1, opacity: 1 }}
+        transition={{ duration: 1.5, delay: 0.6, ease: "easeOut" }}
+      />
+      
+      {/* Light particles in beam */}
+      {[...Array(20)].map((_, i) => (
         <motion.div
           key={i}
-          className="absolute h-full w-1"
+          className="absolute rounded-full"
           style={{
-            left: `${20 + i * 15}%`,
-            background: `linear-gradient(to bottom, transparent 0%, hsl(var(--primary) / 0.1) 50%, transparent 100%)`,
+            left: `calc(50% + ${(Math.random() - 0.5) * 80}px)`,
+            width: Math.random() * 3 + 1,
+            height: Math.random() * 3 + 1,
+            background: 'hsl(43 80% 75%)',
+            boxShadow: '0 0 6px hsl(43 80% 70% / 0.8)',
           }}
-          animate={{
-            opacity: [0.1, 0.3, 0.1],
-            scaleY: [0.8, 1, 0.8],
-          }}
+          initial={{ y: '60vh', opacity: 0 }}
+          animate={{ y: '-60vh', opacity: [0, 1, 1, 0] }}
           transition={{
-            duration: 3 + i * 0.5,
-            delay: i * 0.3,
-            repeat: Infinity,
-            ease: "easeInOut",
+            duration: 2 + Math.random(),
+            delay: 0.5 + Math.random() * 0.8,
+            ease: "easeOut",
           }}
         />
       ))}
@@ -167,20 +313,31 @@ const DoorIntroScene = ({ onEnter }: DoorIntroSceneProps) => {
   const [showContent, setShowContent] = useState(true);
   const [zoomPhase, setZoomPhase] = useState<"idle" | "zoom" | "enter">("idle");
   const [showBurst, setShowBurst] = useState(false);
+  const [showLightBeam, setShowLightBeam] = useState(false);
   const [shake, setShake] = useState(false);
+  const [mousePosition, setMousePosition] = useState({ x: 0.5, y: 0.5 });
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      setMousePosition({
+        x: (e.clientX - rect.left) / rect.width,
+        y: (e.clientY - rect.top) / rect.height,
+      });
+    }
+  }, []);
+
   const handleEnter = () => {
-    // Play sparkle sound immediately
     playSparkleSound();
     
     setShowBurst(true);
     setIsOpening(true);
     setZoomPhase("zoom");
     
-    // Play door creak sound and trigger camera shake
+    // Trigger light beam and camera shake
     setTimeout(() => {
-      playDoorCreakSound();
+      setShowLightBeam(true);
       setShake(true);
       setTimeout(() => setShake(false), 500);
     }, 200);
@@ -202,31 +359,41 @@ const DoorIntroScene = ({ onEnter }: DoorIntroSceneProps) => {
       {showContent && (
         <motion.div
           ref={containerRef}
-          className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden"
+          onMouseMove={handleMouseMove}
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden cursor-none"
           style={{
-            background: "radial-gradient(ellipse at center, hsl(345 60% 12%) 0%, hsl(0 6% 4%) 100%)",
+            background: "radial-gradient(ellipse at center, hsl(345 50% 8%) 0%, hsl(0 5% 3%) 100%)",
           }}
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           animate={shake ? {
-            x: [0, -3, 3, -2, 2, -1, 1, 0],
-            y: [0, 2, -2, 1, -1, 0],
+            x: [0, -2, 2, -1.5, 1.5, -0.5, 0.5, 0],
+            y: [0, 1, -1, 0.5, -0.5, 0],
           } : {}}
-          transition={shake ? { duration: 0.5, ease: "easeOut" } : { duration: 0.5 }}
+          transition={shake ? { duration: 0.4, ease: "easeOut" } : { duration: 0.5 }}
         >
+          {/* Film grain overlay for cinematic feel */}
+          <div 
+            className="absolute inset-0 pointer-events-none opacity-[0.03] mix-blend-overlay"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+            }}
+          />
+
           {/* WebGL Gradient Mesh Background */}
           <Suspense fallback={null}>
             <GradientMeshBackground />
           </Suspense>
 
-          <GoldParticles />
-          <LightRays />
+          <GoldParticles mousePosition={mousePosition} />
+          <AmbientLightRays />
+          <DoorLightBeam isActive={showLightBeam} />
           
-          {/* Deep vignette for 3D depth */}
+          {/* Deep cinematic vignette */}
           <div 
             className="absolute inset-0 pointer-events-none"
             style={{
-              background: "radial-gradient(ellipse at center, transparent 20%, hsl(0 6% 4% / 0.5) 70%, hsl(0 6% 4% / 0.8) 100%)",
+              background: "radial-gradient(ellipse at center, transparent 15%, hsl(0 5% 3% / 0.4) 50%, hsl(0 5% 3% / 0.85) 100%)",
             }}
           />
 
