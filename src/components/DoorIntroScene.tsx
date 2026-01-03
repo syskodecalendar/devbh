@@ -345,7 +345,7 @@ const DoorIntroScene = ({ onEnter }: DoorIntroSceneProps) => {
             <img 
               src={devjiLogo} 
               alt="Devji Since 1950" 
-              className="h-16 md:h-20 lg:h-24 w-auto"
+              className="h-16 md:h-20 lg:h-24 w-auto brightness-0 invert"
             />
           </motion.div>
 

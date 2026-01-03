@@ -30,7 +30,7 @@ const Header = () => {
           <motion.img
             src={devjiLogo}
             alt="Devji"
-            className="h-10 md:h-12 w-auto"
+            className="h-10 md:h-12 w-auto brightness-0 invert"
             whileHover={{ scale: 1.02 }}
           />
         </Link>
