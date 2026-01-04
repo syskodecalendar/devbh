@@ -12,41 +12,41 @@ import styleRoyal from "@/assets/jewelry/style-royal.jpg";
 import styleMinimalist from "@/assets/jewelry/style-minimalist.jpg";
 import styleFusion from "@/assets/jewelry/style-fusion.jpg";
 
-// Style library categories with AI-generated images
+// Style library categories with AI-generated diamond set images
 const styleLibraryImages = [
   {
     id: "traditional",
-    name: "Traditional Elegance",
-    description: "Timeless designs rooted in heritage",
+    name: "Classic Brilliance",
+    description: "Timeless diamond designs for the elegant bride",
     image: styleTraditional,
   },
   {
     id: "contemporary",
-    name: "Contemporary Chic",
-    description: "Modern aesthetics for the new-age bride",
+    name: "Modern Luxe",
+    description: "Contemporary diamond statements for the new-age bride",
     image: styleContemporary,
   },
   {
     id: "royal",
-    name: "Royal Heritage",
-    description: "Majestic pieces fit for royalty",
+    name: "Royal Radiance",
+    description: "Majestic diamond sets fit for royalty",
     image: styleRoyal,
   },
   {
     id: "minimalist",
-    name: "Minimalist Grace",
-    description: "Understated beauty in simplicity",
+    name: "Pure Elegance",
+    description: "Understated diamond beauty in simplicity",
     image: styleMinimalist,
   },
   {
     id: "fusion",
-    name: "Fusion Art",
-    description: "Where tradition meets innovation",
+    name: "Diamond Symphony",
+    description: "Harmonious diamond collections for every occasion",
     image: styleFusion,
   },
 ];
 
-const AUTOPLAY_INTERVAL = 5000; // 5 seconds
+const AUTOPLAY_INTERVAL = 6000; // 6 seconds for Ken Burns effect
 
 const StyleLibrary = () => {
   const navigate = useNavigate();
@@ -67,7 +67,7 @@ const StyleLibrary = () => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft") {
         prevSlide();
-        setIsAutoPlaying(false); // Pause autoplay on manual navigation
+        setIsAutoPlaying(false);
       } else if (e.key === "ArrowRight") {
         nextSlide();
         setIsAutoPlaying(false);
@@ -94,9 +94,7 @@ const StyleLibrary = () => {
   }, [isAutoPlaying, nextSlide]);
 
   const handleStyleClick = () => {
-    // Navigate to the first available jewelry set
     if (jewelrySets && jewelrySets.length > 0) {
-      // Map style index to jewelry set (cycle through available sets)
       const setIndex = currentIndex % jewelrySets.length;
       navigate(`/set/${jewelrySets[setIndex].slug}`);
     }
@@ -109,27 +107,44 @@ const StyleLibrary = () => {
 
   const currentStyle = styleLibraryImages[currentIndex];
 
+  // Ken Burns animation variants - alternating zoom directions
+  const kenBurnsVariants = [
+    { initial: { scale: 1, x: 0, y: 0 }, animate: { scale: 1.15, x: -30, y: -20 } },
+    { initial: { scale: 1.1, x: 20, y: 0 }, animate: { scale: 1, x: -20, y: 10 } },
+    { initial: { scale: 1, x: -20, y: 10 }, animate: { scale: 1.12, x: 20, y: -10 } },
+    { initial: { scale: 1.08, x: 0, y: -15 }, animate: { scale: 1, x: 0, y: 15 } },
+    { initial: { scale: 1, x: 30, y: 0 }, animate: { scale: 1.1, x: -30, y: 0 } },
+  ];
+
+  const currentKenBurns = kenBurnsVariants[currentIndex % kenBurnsVariants.length];
+
   return (
     <div className="h-screen overflow-hidden bg-velvet">
       <Header />
 
       {/* Fullscreen Carousel */}
-      <div className="relative h-screen w-full">
+      <div className="relative h-screen w-full overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentIndex}
-            initial={{ opacity: 0, scale: 1.1 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.7 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8 }}
             className="absolute inset-0 cursor-pointer"
             onClick={handleStyleClick}
           >
-            {/* Background Image */}
-            <img
+            {/* Background Image with Ken Burns Effect */}
+            <motion.img
               src={currentStyle.image}
               alt={currentStyle.name}
               className="w-full h-full object-cover"
+              initial={currentKenBurns.initial}
+              animate={currentKenBurns.animate}
+              transition={{ 
+                duration: AUTOPLAY_INTERVAL / 1000, 
+                ease: "linear" 
+              }}
             />
 
             {/* Overlay */}
@@ -173,18 +188,31 @@ const StyleLibrary = () => {
           <ChevronRight className="w-8 h-8 group-hover:scale-110 transition-transform" />
         </button>
 
-        {/* Slide Indicators */}
+        {/* Slide Indicators with Progress */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-3 items-center">
           {styleLibraryImages.map((_, idx) => (
             <button
               key={idx}
               onClick={(e) => { e.stopPropagation(); setCurrentIndex(idx); setIsAutoPlaying(false); }}
-              className={`h-3 rounded-full transition-all ${
+              className={`h-3 rounded-full transition-all overflow-hidden ${
                 idx === currentIndex
-                  ? "bg-primary w-8"
+                  ? "bg-primary/30 w-12"
                   : "bg-foreground/30 hover:bg-foreground/50 w-3"
               }`}
-            />
+            >
+              {idx === currentIndex && isAutoPlaying && (
+                <motion.div
+                  className="h-full bg-primary"
+                  initial={{ width: "0%" }}
+                  animate={{ width: "100%" }}
+                  transition={{ duration: AUTOPLAY_INTERVAL / 1000, ease: "linear" }}
+                  key={`progress-${currentIndex}`}
+                />
+              )}
+              {idx === currentIndex && !isAutoPlaying && (
+                <div className="h-full bg-primary w-full" />
+              )}
+            </button>
           ))}
         </div>
 

@@ -4,7 +4,6 @@ import { useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
-  Heart,
   Camera,
   Info,
   Image,
@@ -14,10 +13,7 @@ import {
 } from "lucide-react";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
-import { useJewelrySetBySlug, useDiamondQualities, calculateSetPrice } from "@/hooks/useJewelrySets";
-import { useStore } from "@/store/useStore";
-import { toast } from "sonner";
-import QuoteModal from "@/components/QuoteModal";
+import { useJewelrySetBySlug } from "@/hooks/useJewelrySets";
 import TryOnModal from "@/components/TryOnModal";
 import FullscreenGallery from "@/components/FullscreenGallery";
 import { getDemoMedia } from "@/lib/demoImages";
@@ -46,7 +42,6 @@ const SetDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: set, isLoading } = useJewelrySetBySlug(id || "");
-  const { data: diamondQualities } = useDiamondQualities();
 
   const [activeTab, setActiveTab] = useState<"gallery" | "details" | "tryon">(
     "gallery"
@@ -55,13 +50,10 @@ const SetDetail = () => {
   const [selectedDiamondQuality, setSelectedDiamondQuality] = useState<string>("vs-si");
   const [selectedMetalKarat, setSelectedMetalKarat] = useState<string>("18k");
   const [selectedMetalColor, setSelectedMetalColor] = useState<string>("yellow");
-  const [quoteModalOpen, setQuoteModalOpen] = useState(false);
   const [tryOnModalOpen, setTryOnModalOpen] = useState(false);
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
   const [fullscreenIndex, setFullscreenIndex] = useState(0);
 
-  const { addToShortlistDB, removeFromShortlist, isInShortlist } = useStore();
-  const inShortlist = isInShortlist(set?.id || "");
 
   if (isLoading) {
     return (
@@ -145,15 +137,6 @@ const SetDetail = () => {
 
   const price = getPrice();
 
-  const handleShortlistToggle = () => {
-    if (inShortlist) {
-      removeFromShortlist(set.id);
-      toast.info(`${set.name} removed from shortlist`);
-    } else {
-      addToShortlistDB(set, selectedDiamondQuality || undefined);
-      toast.success(`${set.name} added to shortlist`);
-    }
-  };
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
@@ -394,39 +377,12 @@ const SetDetail = () => {
                 </p>
               </div>
 
-              {/* Actions */}
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Button
-                  variant={inShortlist ? "secondary" : "goldOutline"}
-                  className="flex-1"
-                  onClick={handleShortlistToggle}
-                >
-                  <Heart
-                    className={`w-4 h-4 mr-2 ${
-                      inShortlist ? "fill-current" : ""
-                    }`}
-                  />
-                  {inShortlist ? "In Shortlist" : "Shortlist"}
-                </Button>
-                <Button
-                  variant="gold"
-                  className="flex-1"
-                  onClick={() => setQuoteModalOpen(true)}
-                >
-                  Request a Quote
-                </Button>
-              </div>
             </motion.div>
           </div>
         </div>
       </main>
 
       {/* Modals */}
-      <QuoteModal
-        open={quoteModalOpen}
-        onClose={() => setQuoteModalOpen(false)}
-        selectedSets={[]}
-      />
 
       <TryOnModal
         open={tryOnModalOpen}
