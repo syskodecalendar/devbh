@@ -1,62 +1,110 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Pause, Play } from "lucide-react";
 import Header from "@/components/Header";
-import { useCollections } from "@/hooks/useJewelrySets";
+import { useJewelrySets } from "@/hooks/useJewelrySets";
 
-// Placeholder images for 5 style library categories
+// Import generated AI images
+import styleTraditional from "@/assets/jewelry/style-traditional.jpg";
+import styleContemporary from "@/assets/jewelry/style-contemporary.jpg";
+import styleRoyal from "@/assets/jewelry/style-royal.jpg";
+import styleMinimalist from "@/assets/jewelry/style-minimalist.jpg";
+import styleFusion from "@/assets/jewelry/style-fusion.jpg";
+
+// Style library categories with AI-generated images
 const styleLibraryImages = [
   {
     id: "traditional",
     name: "Traditional Elegance",
     description: "Timeless designs rooted in heritage",
-    image: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=1920&q=80",
+    image: styleTraditional,
   },
   {
     id: "contemporary",
     name: "Contemporary Chic",
     description: "Modern aesthetics for the new-age bride",
-    image: "https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=1920&q=80",
+    image: styleContemporary,
   },
   {
     id: "royal",
     name: "Royal Heritage",
     description: "Majestic pieces fit for royalty",
-    image: "https://images.unsplash.com/photo-1611652022419-a9419f74343d?w=1920&q=80",
+    image: styleRoyal,
   },
   {
     id: "minimalist",
     name: "Minimalist Grace",
     description: "Understated beauty in simplicity",
-    image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=1920&q=80",
+    image: styleMinimalist,
   },
   {
     id: "fusion",
     name: "Fusion Art",
     description: "Where tradition meets innovation",
-    image: "https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=1920&q=80",
+    image: styleFusion,
   },
 ];
 
+const AUTOPLAY_INTERVAL = 5000; // 5 seconds
+
 const StyleLibrary = () => {
   const navigate = useNavigate();
-  const { data: collections } = useCollections();
+  const { data: jewelrySets } = useJewelrySets();
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
-  const nextSlide = () => {
+  const nextSlide = useCallback(() => {
     setCurrentIndex((prev) => (prev + 1) % styleLibraryImages.length);
-  };
+  }, []);
 
-  const prevSlide = () => {
+  const prevSlide = useCallback(() => {
     setCurrentIndex((prev) => (prev - 1 + styleLibraryImages.length) % styleLibraryImages.length);
+  }, []);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") {
+        prevSlide();
+        setIsAutoPlaying(false); // Pause autoplay on manual navigation
+      } else if (e.key === "ArrowRight") {
+        nextSlide();
+        setIsAutoPlaying(false);
+      } else if (e.key === "Enter" || e.key === " ") {
+        handleStyleClick();
+      } else if (e.key === "Escape") {
+        navigate("/");
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [nextSlide, prevSlide, navigate, currentIndex]);
+
+  // Autoplay slideshow
+  useEffect(() => {
+    if (!isAutoPlaying) return;
+
+    const interval = setInterval(() => {
+      nextSlide();
+    }, AUTOPLAY_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [isAutoPlaying, nextSlide]);
+
+  const handleStyleClick = () => {
+    // Navigate to the first available jewelry set
+    if (jewelrySets && jewelrySets.length > 0) {
+      // Map style index to jewelry set (cycle through available sets)
+      const setIndex = currentIndex % jewelrySets.length;
+      navigate(`/set/${jewelrySets[setIndex].slug}`);
+    }
   };
 
-  const handleStyleClick = (styleId: string) => {
-    // Navigate to first set or collection (for now, navigate to first available collection)
-    if (collections && collections.length > 0) {
-      navigate(`/set/${collections[0].slug}`);
-    }
+  const toggleAutoPlay = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsAutoPlaying(!isAutoPlaying);
   };
 
   const currentStyle = styleLibraryImages[currentIndex];
@@ -75,7 +123,7 @@ const StyleLibrary = () => {
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.7 }}
             className="absolute inset-0 cursor-pointer"
-            onClick={() => handleStyleClick(currentStyle.id)}
+            onClick={handleStyleClick}
           >
             {/* Background Image */}
             <img
@@ -113,32 +161,41 @@ const StyleLibrary = () => {
 
         {/* Navigation Arrows */}
         <button
-          onClick={(e) => { e.stopPropagation(); prevSlide(); }}
+          onClick={(e) => { e.stopPropagation(); prevSlide(); setIsAutoPlaying(false); }}
           className="absolute left-8 top-1/2 -translate-y-1/2 z-20 p-4 rounded-full bg-background/30 backdrop-blur-sm text-foreground hover:bg-background/50 transition-all border border-border/30 group"
         >
           <ChevronLeft className="w-8 h-8 group-hover:scale-110 transition-transform" />
         </button>
         <button
-          onClick={(e) => { e.stopPropagation(); nextSlide(); }}
+          onClick={(e) => { e.stopPropagation(); nextSlide(); setIsAutoPlaying(false); }}
           className="absolute right-8 top-1/2 -translate-y-1/2 z-20 p-4 rounded-full bg-background/30 backdrop-blur-sm text-foreground hover:bg-background/50 transition-all border border-border/30 group"
         >
           <ChevronRight className="w-8 h-8 group-hover:scale-110 transition-transform" />
         </button>
 
         {/* Slide Indicators */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-3">
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-3 items-center">
           {styleLibraryImages.map((_, idx) => (
             <button
               key={idx}
-              onClick={() => setCurrentIndex(idx)}
-              className={`w-3 h-3 rounded-full transition-all ${
+              onClick={(e) => { e.stopPropagation(); setCurrentIndex(idx); setIsAutoPlaying(false); }}
+              className={`h-3 rounded-full transition-all ${
                 idx === currentIndex
                   ? "bg-primary w-8"
-                  : "bg-foreground/30 hover:bg-foreground/50"
+                  : "bg-foreground/30 hover:bg-foreground/50 w-3"
               }`}
             />
           ))}
         </div>
+
+        {/* Autoplay Toggle */}
+        <button
+          onClick={toggleAutoPlay}
+          className="absolute bottom-8 right-8 z-20 p-3 rounded-full bg-background/30 backdrop-blur-sm text-foreground hover:bg-background/50 transition-all border border-border/30"
+          title={isAutoPlaying ? "Pause slideshow" : "Play slideshow"}
+        >
+          {isAutoPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+        </button>
 
         {/* Back Button */}
         <button
@@ -147,6 +204,11 @@ const StyleLibrary = () => {
         >
           <X className="w-5 h-5" />
         </button>
+
+        {/* Keyboard hints (for TV display) */}
+        <div className="absolute bottom-8 left-8 z-20 text-foreground/50 text-xs hidden md:block">
+          <span>← → Navigate</span> · <span>Enter to View</span> · <span>Esc to Exit</span>
+        </div>
       </div>
     </div>
   );
