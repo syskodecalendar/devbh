@@ -22,6 +22,26 @@ import TryOnModal from "@/components/TryOnModal";
 import FullscreenGallery from "@/components/FullscreenGallery";
 import { getDemoMedia } from "@/lib/demoImages";
 
+// Diamond quality options
+const diamondQualityOptions = [
+  { id: "vs-si", name: "VS-SI", description: "Very Slightly to Slightly Included" },
+  { id: "si", name: "SI", description: "Slightly Included" },
+  { id: "si-i", name: "SI-I", description: "Slightly Included to Included" },
+];
+
+// Metal karat options
+const metalKaratOptions = [
+  { id: "18k", name: "18K", description: "75% Pure Gold" },
+  { id: "14k", name: "14K", description: "58.3% Pure Gold" },
+];
+
+// Metal color options
+const metalColorOptions = [
+  { id: "white", name: "White", color: "bg-gray-200" },
+  { id: "yellow", name: "Yellow", color: "bg-yellow-400" },
+  { id: "rose", name: "Rose", color: "bg-pink-300" },
+];
+
 const SetDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -32,7 +52,9 @@ const SetDetail = () => {
     "gallery"
   );
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [selectedDiamondQuality, setSelectedDiamondQuality] = useState<string | null>(null);
+  const [selectedDiamondQuality, setSelectedDiamondQuality] = useState<string>("vs-si");
+  const [selectedMetalKarat, setSelectedMetalKarat] = useState<string>("18k");
+  const [selectedMetalColor, setSelectedMetalColor] = useState<string>("yellow");
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
   const [tryOnModalOpen, setTryOnModalOpen] = useState(false);
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
@@ -40,13 +62,6 @@ const SetDetail = () => {
 
   const { addToShortlistDB, removeFromShortlist, isInShortlist } = useStore();
   const inShortlist = isInShortlist(set?.id || "");
-
-  // Set default diamond quality when data loads
-  useState(() => {
-    if (diamondQualities && diamondQualities.length > 0 && !selectedDiamondQuality) {
-      setSelectedDiamondQuality(diamondQualities[0].id);
-    }
-  });
 
   if (isLoading) {
     return (
@@ -63,8 +78,8 @@ const SetDetail = () => {
           <h1 className="font-serif text-3xl text-foreground mb-4">
             Set Not Found
           </h1>
-          <Button variant="goldOutline" onClick={() => navigate("/collections")}>
-            Back to Collections
+          <Button variant="goldOutline" onClick={() => navigate("/style-library")}>
+            Back to Style Library
           </Button>
         </div>
       </div>
@@ -109,8 +124,26 @@ const SetDetail = () => {
     allImages.push("/placeholder.svg");
   }
 
-  const selectedQuality = diamondQualities?.find(q => q.id === selectedDiamondQuality);
-  const estimatedPrice = selectedQuality ? calculateSetPrice(set, selectedQuality) : calculateSetPrice(set);
+  // Calculate price based on selections
+  const getPrice = () => {
+    let basePrice = set.base_price || 0;
+    
+    // Adjust for karat
+    if (selectedMetalKarat === "14k") {
+      basePrice = basePrice * 0.85;
+    }
+    
+    // Adjust for diamond quality
+    if (selectedDiamondQuality === "si") {
+      basePrice = basePrice * 0.95;
+    } else if (selectedDiamondQuality === "si-i") {
+      basePrice = basePrice * 0.90;
+    }
+    
+    return Math.round(basePrice);
+  };
+
+  const price = getPrice();
 
   const handleShortlistToggle = () => {
     if (inShortlist) {
@@ -151,11 +184,11 @@ const SetDetail = () => {
         {/* Back button */}
         <div className="container mx-auto px-4 py-4">
           <Link
-            to="/collections"
+            to="/style-library"
             className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm">Back to Collections</span>
+            <span className="text-sm">Back to Style Library</span>
           </Link>
         </div>
 
@@ -281,153 +314,88 @@ const SetDetail = () => {
                 <p className="text-muted-foreground mt-3">{set.description || set.short_description}</p>
               </div>
 
-              {/* Tabs */}
-              <div className="flex gap-2 mb-6 border-b border-border/30 pb-2">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-t-md text-sm transition-colors ${
-                      activeTab === tab.id
-                        ? "bg-card text-foreground border-b-2 border-primary"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    <tab.icon className="w-4 h-4" />
-                    {tab.label}
-                  </button>
-                ))}
+              {/* Diamond Quality Selector */}
+              <div className="mb-6">
+                <h3 className="font-serif text-lg text-foreground mb-3">
+                  Diamond Quality
+                </h3>
+                <div className="flex gap-2">
+                  {diamondQualityOptions.map((quality) => (
+                    <button
+                      key={quality.id}
+                      onClick={() => setSelectedDiamondQuality(quality.id)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                        selectedDiamondQuality === quality.id
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-card/60 text-foreground border border-border/50 hover:border-primary/50"
+                      }`}
+                    >
+                      {quality.name}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              {/* Tab Content */}
-              <AnimatePresence mode="wait">
-                {activeTab === "gallery" && (
-                  <motion.div
-                    key="gallery"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="space-y-4"
-                  >
-                    <p className="text-muted-foreground">
-                      Browse through {allImages.length} stunning images of the{" "}
-                      {set.name} collection. Use the arrows or thumbnails to
-                      navigate.
-                    </p>
-                  </motion.div>
-                )}
-
-                {activeTab === "details" && (
-                  <motion.div
-                    key="details"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="space-y-4"
-                  >
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="luxury-card p-4">
-                        <p className="text-muted-foreground text-xs uppercase tracking-wider">
-                          Base Price
-                        </p>
-                        <p className="text-foreground font-serif text-lg mt-1">
-                          {set.base_price ? `${set.base_price} BHD` : "On Request"}
-                        </p>
-                      </div>
-                      <div className="luxury-card p-4">
-                        <p className="text-muted-foreground text-xs uppercase tracking-wider">
-                          Diamond
-                        </p>
-                        <p className="text-foreground font-serif text-lg mt-1">
-                          {set.has_diamond ? "Yes" : "No"}
-                        </p>
-                      </div>
-                      <div className="luxury-card p-4 col-span-2">
-                        <p className="text-muted-foreground text-xs uppercase tracking-wider">
-                          Collection
-                        </p>
-                        <p className="text-foreground mt-1">{set.collection?.name || "Exclusive"}</p>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-
-                {activeTab === "tryon" && (
-                  <motion.div
-                    key="tryon"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="space-y-4"
-                  >
-                    <p className="text-muted-foreground mb-4">
-                      Experience how this piece looks on you with our virtual
-                      try-on feature.
-                    </p>
-                    <Button
-                      variant="gold"
-                      className="w-full"
-                      onClick={() => setTryOnModalOpen(true)}
+              {/* Metal Karat Selector */}
+              <div className="mb-6">
+                <h3 className="font-serif text-lg text-foreground mb-3">
+                  Metal Karat
+                </h3>
+                <div className="flex gap-2">
+                  {metalKaratOptions.map((karat) => (
+                    <button
+                      key={karat.id}
+                      onClick={() => setSelectedMetalKarat(karat.id)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                        selectedMetalKarat === karat.id
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-card/60 text-foreground border border-border/50 hover:border-primary/50"
+                      }`}
                     >
-                      <Camera className="w-4 h-4 mr-2" />
-                      Open Try-On Experience
-                    </Button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Diamond Quality Selector */}
-              {set.has_diamond && diamondQualities && diamondQualities.length > 0 && (
-                <div className="mt-8">
-                  <h3 className="font-serif text-lg text-foreground mb-3">
-                    Diamond Quality
-                  </h3>
-                  <div className="space-y-2">
-                    {diamondQualities.map((quality) => (
-                      <button
-                        key={quality.id}
-                        onClick={() => setSelectedDiamondQuality(quality.id)}
-                        className={`w-full p-4 rounded-lg text-left transition-all ${
-                          selectedDiamondQuality === quality.id
-                            ? "luxury-card border-primary/50"
-                            : "bg-card/40 border border-border/30 hover:border-border/50"
-                        }`}
-                      >
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <p className="text-foreground font-medium">
-                              {quality.name}
-                            </p>
-                            <p className="text-muted-foreground text-sm">
-                              {quality.description}
-                            </p>
-                          </div>
-                          {selectedDiamondQuality === quality.id && (
-                            <div className="w-3 h-3 rounded-full bg-primary" />
-                          )}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
+                      {karat.name}
+                    </button>
+                  ))}
                 </div>
-              )}
+              </div>
+
+              {/* Metal Color Selector */}
+              <div className="mb-8">
+                <h3 className="font-serif text-lg text-foreground mb-3">
+                  Metal Color
+                </h3>
+                <div className="flex gap-3">
+                  {metalColorOptions.map((color) => (
+                    <button
+                      key={color.id}
+                      onClick={() => setSelectedMetalColor(color.id)}
+                      className={`flex flex-col items-center gap-2 p-3 rounded-lg transition-all ${
+                        selectedMetalColor === color.id
+                          ? "ring-2 ring-primary bg-card/60"
+                          : "bg-card/40 hover:bg-card/60"
+                      }`}
+                    >
+                      <div className={`w-8 h-8 rounded-full ${color.color} border-2 border-border/50`} />
+                      <span className="text-xs text-foreground">{color.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               {/* Price */}
-              <div className="mt-8 p-6 luxury-card">
+              <div className="p-6 luxury-card mb-6">
                 <p className="text-muted-foreground text-sm uppercase tracking-wider mb-1">
-                  Estimated Price
+                  Price
                 </p>
                 <p className="font-serif text-3xl text-primary">
-                  {estimatedPrice > 0 ? `${estimatedPrice.toLocaleString()} BHD` : "Price on request"}
+                  {price > 0 ? `${price.toLocaleString()} BHD` : "Price on request"}
                 </p>
                 <p className="text-muted-foreground/60 text-xs mt-2">
-                  Final pricing may vary based on live gold rate and
-                  customization.
+                  Final pricing may vary based on live gold rate.
                 </p>
               </div>
 
               {/* Actions */}
-              <div className="mt-6 flex flex-col sm:flex-row gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Button
                   variant={inShortlist ? "secondary" : "goldOutline"}
                   className="flex-1"

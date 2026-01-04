@@ -3,9 +3,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
 import Showroom from "./pages/Showroom";
-import Collections from "./pages/Collections";
+import StyleLibrary from "./pages/StyleLibrary";
 import SetDetail from "./pages/SetDetail";
 import Shortlist from "./pages/Shortlist";
 import Auth from "./pages/Auth";
@@ -21,9 +20,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/showroom" element={<Showroom />} />
-          <Route path="/collections" element={<Collections />} />
+          <Route path="/" element={<Showroom />} />
+          <Route path="/style-library" element={<StyleLibrary />} />
           <Route path="/set/:id" element={<SetDetail />} />
           <Route path="/shortlist" element={<Shortlist />} />
           <Route path="/auth" element={<Auth />} />
