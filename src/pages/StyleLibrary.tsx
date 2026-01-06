@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, X, Pause, Play } from "lucide-react";
 import Header from "@/components/Header";
-import { useCollections } from "@/hooks/useJewelrySets";
+import { useCollections, useJewelrySetsByCollection } from "@/hooks/useJewelrySets";
 
 // Fallback images for collections without cover images
 import styleTraditional from "@/assets/jewelry/style-traditional.jpg";
@@ -37,6 +37,11 @@ const StyleLibrary = () => {
     slug: col.slug,
   })) || [];
 
+  const currentCollectionSlug = displayCollections[currentIndex]?.slug || "";
+  
+  // Fetch sets for the current collection
+  const { data: currentCollectionSets } = useJewelrySetsByCollection(currentCollectionSlug);
+
   const nextSlide = useCallback(() => {
     if (displayCollections.length === 0) return;
     setCurrentIndex((prev) => (prev + 1) % displayCollections.length);
@@ -47,6 +52,14 @@ const StyleLibrary = () => {
     setCurrentIndex((prev) => (prev - 1 + displayCollections.length) % displayCollections.length);
   }, [displayCollections.length]);
 
+  // Handle click to navigate to set detail page
+  const handleCollectionClick = useCallback(() => {
+    if (currentCollectionSets && currentCollectionSets.length > 0) {
+      // Navigate to the first set in this collection
+      navigate(`/set/${currentCollectionSets[0].slug}`);
+    }
+  }, [currentCollectionSets, navigate]);
+
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -56,6 +69,8 @@ const StyleLibrary = () => {
       } else if (e.key === "ArrowRight") {
         nextSlide();
         setIsAutoPlaying(false);
+      } else if (e.key === "Enter" || e.key === " ") {
+        handleCollectionClick();
       } else if (e.key === "Escape") {
         navigate("/");
       }
@@ -63,7 +78,7 @@ const StyleLibrary = () => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [nextSlide, prevSlide, navigate]);
+  }, [nextSlide, prevSlide, navigate, handleCollectionClick]);
 
   // Autoplay slideshow
   useEffect(() => {
@@ -98,6 +113,7 @@ const StyleLibrary = () => {
   }
 
   const currentCollection = displayCollections[currentIndex];
+  const hasSetToNavigate = currentCollectionSets && currentCollectionSets.length > 0;
 
   // Ken Burns animation variants
   const kenBurnsVariants = [
@@ -114,7 +130,7 @@ const StyleLibrary = () => {
     <div className="h-screen overflow-hidden bg-velvet">
       <Header />
 
-      {/* Fullscreen Carousel - No navigation on click */}
+      {/* Fullscreen Carousel - Click navigates to set detail */}
       <div className="relative h-screen w-full overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.div
@@ -123,7 +139,8 @@ const StyleLibrary = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.8 }}
-            className="absolute inset-0"
+            className={`absolute inset-0 ${hasSetToNavigate ? 'cursor-pointer' : ''}`}
+            onClick={hasSetToNavigate ? handleCollectionClick : undefined}
           >
             {/* Background Image with Ken Burns Effect */}
             <motion.img
@@ -157,6 +174,11 @@ const StyleLibrary = () => {
                 <p className="text-foreground/80 text-lg md:text-xl max-w-xl mx-auto">
                   {currentCollection.description}
                 </p>
+                {hasSetToNavigate && (
+                  <p className="text-primary/80 text-sm mt-6 animate-pulse">
+                    Click to view set details
+                  </p>
+                )}
               </motion.div>
             </div>
           </motion.div>
@@ -223,7 +245,7 @@ const StyleLibrary = () => {
 
         {/* Keyboard hints */}
         <div className="absolute bottom-8 left-8 z-20 text-foreground/50 text-xs hidden md:block">
-          <span>← → Navigate</span> · <span>Esc to Exit</span>
+          <span>← → Navigate</span> · <span>Enter to View</span> · <span>Esc to Exit</span>
         </div>
       </div>
     </div>
