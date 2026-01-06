@@ -2,8 +2,9 @@ import { motion } from "framer-motion";
 import Header from "@/components/Header";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import heroVideo from "@/assets/jewelry/maroon-majesty-video1.mp4";
+import devjiAurumLogo from "@/assets/devji-aurum-logo.jpg";
 
 const Showroom = () => {
   return (
@@ -33,12 +34,12 @@ const Showroom = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.5 }}
           >
-            <div className="flex items-center justify-center gap-2 mb-6">
-              <Sparkles className="w-5 h-5 text-primary" />
-              <span className="text-primary text-sm tracking-[0.3em] uppercase font-medium">
-                The Showroom
-              </span>
-              <Sparkles className="w-5 h-5 text-primary" />
+            <div className="flex items-center justify-center mb-6">
+              <img 
+                src={devjiAurumLogo} 
+                alt="Devji Aurum" 
+                className="h-12 md:h-16 lg:h-20 object-contain"
+              />
             </div>
 
             <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl text-foreground mb-6">
