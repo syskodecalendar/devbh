@@ -4,41 +4,21 @@ import { useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
-  Camera,
-  Info,
-  Image,
   ArrowLeft,
   Play,
   Maximize2,
-  Filter,
 } from "lucide-react";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
-import { useJewelrySetBySlug } from "@/hooks/useJewelrySets";
+import { useJewelrySetBySlug, useDiamondQualities } from "@/hooks/useJewelrySets";
 import TryOnModal from "@/components/TryOnModal";
 import FullscreenGallery from "@/components/FullscreenGallery";
 import { getDemoMedia } from "@/lib/demoImages";
 
-// Price filter options
-const priceFilterOptions = [
-  { id: "all", name: "All Prices", min: 0, max: Infinity },
-  { id: "below-5000", name: "Below 5,000 BHD", min: 0, max: 5000 },
-  { id: "5000-10000", name: "5,000 - 10,000 BHD", min: 5000, max: 10000 },
-  { id: "10000-20000", name: "10,000 - 20,000 BHD", min: 10000, max: 20000 },
-  { id: "above-20000", name: "Above 20,000 BHD", min: 20000, max: Infinity },
-];
-
-// Diamond quality options
-const diamondQualityOptions = [
-  { id: "vs-si", name: "VS-SI", description: "Very Slightly to Slightly Included" },
-  { id: "si", name: "SI", description: "Slightly Included" },
-  { id: "si-i", name: "SI-I", description: "Slightly Included to Included" },
-];
-
 // Metal karat options
 const metalKaratOptions = [
-  { id: "18k", name: "18K", description: "75% Pure Gold" },
-  { id: "14k", name: "14K", description: "58.3% Pure Gold" },
+  { id: "18k", name: "18K", description: "75% Pure Gold", multiplier: 1 },
+  { id: "14k", name: "14K", description: "58.3% Pure Gold", multiplier: 0.85 },
 ];
 
 // Metal color options
@@ -52,19 +32,20 @@ const SetDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: set, isLoading } = useJewelrySetBySlug(id || "");
+  const { data: diamondQualities } = useDiamondQualities();
 
-  const [activeTab, setActiveTab] = useState<"gallery" | "details" | "tryon">(
-    "gallery"
-  );
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [selectedDiamondQuality, setSelectedDiamondQuality] = useState<string>("vs-si");
+  const [selectedDiamondQuality, setSelectedDiamondQuality] = useState<string>("");
   const [selectedMetalKarat, setSelectedMetalKarat] = useState<string>("18k");
   const [selectedMetalColor, setSelectedMetalColor] = useState<string>("yellow");
-  const [selectedPriceFilter, setSelectedPriceFilter] = useState<string>("all");
   const [tryOnModalOpen, setTryOnModalOpen] = useState(false);
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
   const [fullscreenIndex, setFullscreenIndex] = useState(0);
 
+  // Set default diamond quality when data loads
+  if (diamondQualities && diamondQualities.length > 0 && !selectedDiamondQuality) {
+    setSelectedDiamondQuality(diamondQualities[0].code);
+  }
 
   if (isLoading) {
     return (
@@ -132,22 +113,22 @@ const SetDetail = () => {
     let basePrice = set.base_price || 0;
     
     // Adjust for karat
-    if (selectedMetalKarat === "14k") {
-      basePrice = basePrice * 0.85;
+    const karatOption = metalKaratOptions.find(k => k.id === selectedMetalKarat);
+    if (karatOption) {
+      basePrice = basePrice * karatOption.multiplier;
     }
     
-    // Adjust for diamond quality
-    if (selectedDiamondQuality === "si") {
-      basePrice = basePrice * 0.95;
-    } else if (selectedDiamondQuality === "si-i") {
-      basePrice = basePrice * 0.90;
+    // Adjust for diamond quality from database
+    const diamondQuality = diamondQualities?.find(d => d.code === selectedDiamondQuality);
+    if (diamondQuality && set.has_diamond && set.diamond_price_per_carat) {
+      const multiplier = diamondQuality.price_multiplier || 1;
+      basePrice = basePrice + (set.diamond_price_per_carat * multiplier);
     }
     
     return Math.round(basePrice);
   };
 
   const price = getPrice();
-
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
@@ -164,11 +145,10 @@ const SetDetail = () => {
     setFullscreenOpen(true);
   };
 
-  const tabs = [
-    { id: "gallery", label: "Gallery", icon: Image },
-    { id: "details", label: "Details", icon: Info },
-    { id: "tryon", label: "Try On", icon: Camera },
-  ] as const;
+  // Get back URL based on collection
+  const backUrl = set.collection?.slug 
+    ? `/collections/${set.collection.slug}` 
+    : "/style-library";
 
   return (
     <div className="min-h-screen bg-velvet">
@@ -178,11 +158,13 @@ const SetDetail = () => {
         {/* Back button */}
         <div className="container mx-auto px-4 py-4">
           <Link
-            to="/style-library"
+            to={backUrl}
             className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm">Back to Style Library</span>
+            <span className="text-sm">
+              Back to {set.collection?.name || "Style Library"}
+            </span>
           </Link>
         </div>
 
@@ -297,29 +279,6 @@ const SetDetail = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
-              {/* Price Filter */}
-              <div className="mb-6 p-4 luxury-card">
-                <div className="flex items-center gap-2 mb-3">
-                  <Filter className="w-4 h-4 text-primary" />
-                  <h3 className="font-serif text-lg text-foreground">Price Range</h3>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {priceFilterOptions.map((filter) => (
-                    <button
-                      key={filter.id}
-                      onClick={() => setSelectedPriceFilter(filter.id)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                        selectedPriceFilter === filter.id
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-card/60 text-foreground border border-border/50 hover:border-primary/50"
-                      }`}
-                    >
-                      {filter.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               {/* Title and Collection */}
               <div className="mb-6">
                 <span className="text-primary text-sm tracking-wider uppercase">
@@ -331,27 +290,30 @@ const SetDetail = () => {
                 <p className="text-muted-foreground mt-3">{set.description || set.short_description}</p>
               </div>
 
-              {/* Diamond Quality Selector */}
-              <div className="mb-6">
-                <h3 className="font-serif text-lg text-foreground mb-3">
-                  Diamond Quality
-                </h3>
-                <div className="flex gap-2">
-                  {diamondQualityOptions.map((quality) => (
-                    <button
-                      key={quality.id}
-                      onClick={() => setSelectedDiamondQuality(quality.id)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                        selectedDiamondQuality === quality.id
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-card/60 text-foreground border border-border/50 hover:border-primary/50"
-                      }`}
-                    >
-                      {quality.name}
-                    </button>
-                  ))}
+              {/* Diamond Quality Selector - from database */}
+              {diamondQualities && diamondQualities.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="font-serif text-lg text-foreground mb-3">
+                    Diamond Quality
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {diamondQualities.map((quality) => (
+                      <button
+                        key={quality.id}
+                        onClick={() => setSelectedDiamondQuality(quality.code)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                          selectedDiamondQuality === quality.code
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-card/60 text-foreground border border-border/50 hover:border-primary/50"
+                        }`}
+                        title={quality.description || ""}
+                      >
+                        {quality.name}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Metal Karat Selector */}
               <div className="mb-6">
@@ -368,6 +330,7 @@ const SetDetail = () => {
                           ? "bg-primary text-primary-foreground"
                           : "bg-card/60 text-foreground border border-border/50 hover:border-primary/50"
                       }`}
+                      title={karat.description}
                     >
                       {karat.name}
                     </button>
@@ -417,7 +380,6 @@ const SetDetail = () => {
       </main>
 
       {/* Modals */}
-
       <TryOnModal
         open={tryOnModalOpen}
         onClose={() => setTryOnModalOpen(false)}

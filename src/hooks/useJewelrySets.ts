@@ -138,6 +138,63 @@ export const useCollections = () => {
   });
 };
 
+export const useJewelrySetsByCollection = (collectionSlug: string) => {
+  return useQuery({
+    queryKey: ["jewelry-sets", "collection", collectionSlug],
+    queryFn: async () => {
+      // First get the collection
+      const { data: collection, error: collectionError } = await supabase
+        .from("collections")
+        .select("id")
+        .eq("slug", collectionSlug)
+        .maybeSingle();
+
+      if (collectionError) throw collectionError;
+      if (!collection) return [];
+
+      // Then get sets in this collection
+      const { data, error } = await supabase
+        .from("jewelry_sets")
+        .select(`
+          *,
+          collection:collections(id, name, slug)
+        `)
+        .eq("collection_id", collection.id)
+        .order("display_order");
+
+      if (error) throw error;
+      return data as JewelrySetDB[];
+    },
+    enabled: !!collectionSlug,
+  });
+};
+
+export const useJewelrySetsByPriceRange = (minPrice: number, maxPrice: number) => {
+  return useQuery({
+    queryKey: ["jewelry-sets", "price", minPrice, maxPrice],
+    queryFn: async () => {
+      let query = supabase
+        .from("jewelry_sets")
+        .select(`
+          *,
+          collection:collections(id, name, slug)
+        `)
+        .order("display_order");
+
+      if (maxPrice !== Infinity) {
+        query = query.gte("base_price", minPrice).lte("base_price", maxPrice);
+      } else {
+        query = query.gte("base_price", minPrice);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      return data as JewelrySetDB[];
+    },
+  });
+};
+
 export const useDiamondQualities = () => {
   return useQuery({
     queryKey: ["diamond-qualities"],

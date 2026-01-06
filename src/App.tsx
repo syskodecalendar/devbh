@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Showroom from "./pages/Showroom";
 import StyleLibrary from "./pages/StyleLibrary";
+import CollectionDetail from "./pages/CollectionDetail";
 import SetDetail from "./pages/SetDetail";
 import Shortlist from "./pages/Shortlist";
 import Auth from "./pages/Auth";
@@ -22,6 +23,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Showroom />} />
           <Route path="/style-library" element={<StyleLibrary />} />
+          <Route path="/collections/:slug" element={<CollectionDetail />} />
           <Route path="/set/:id" element={<SetDetail />} />
           <Route path="/shortlist" element={<Shortlist />} />
           <Route path="/auth" element={<Auth />} />

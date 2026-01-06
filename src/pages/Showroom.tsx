@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import heroVideo from "@/assets/jewelry/maroon-majesty-video1.mp4";
-import devjiAurumLogo from "@/assets/devji-aurum-logo.jpg";
+import devjiAurumLogo from "@/assets/devji-aurum-logo.png";
 
 const Showroom = () => {
   return (
