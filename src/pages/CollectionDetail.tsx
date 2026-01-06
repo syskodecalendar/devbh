@@ -1,39 +1,15 @@
 import { motion } from "framer-motion";
-import { useParams, useNavigate, Link } from "react-router-dom";
-import { useState, useMemo } from "react";
-import { ArrowLeft, Filter } from "lucide-react";
+import { useParams, Link } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import Header from "@/components/Header";
 import { useJewelrySetsByCollection, useCollections } from "@/hooks/useJewelrySets";
 
-// Price filter options
-const priceFilterOptions = [
-  { id: "all", name: "All Prices", min: 0, max: Infinity },
-  { id: "below-5000", name: "Below 5,000 BHD", min: 0, max: 5000 },
-  { id: "5000-10000", name: "5,000 - 10,000 BHD", min: 5000, max: 10000 },
-  { id: "10000-20000", name: "10,000 - 20,000 BHD", min: 10000, max: 20000 },
-  { id: "above-20000", name: "Above 20,000 BHD", min: 20000, max: Infinity },
-];
-
 const CollectionDetail = () => {
   const { slug } = useParams<{ slug: string }>();
-  const navigate = useNavigate();
   const { data: sets, isLoading } = useJewelrySetsByCollection(slug || "");
   const { data: collections } = useCollections();
-  const [selectedPriceFilter, setSelectedPriceFilter] = useState<string>("all");
 
   const collection = collections?.find((c) => c.slug === slug);
-
-  // Filter sets by price
-  const filteredSets = useMemo(() => {
-    if (!sets) return [];
-    const filter = priceFilterOptions.find((f) => f.id === selectedPriceFilter);
-    if (!filter || filter.id === "all") return sets;
-
-    return sets.filter((set) => {
-      const price = set.base_price || 0;
-      return price >= filter.min && price <= filter.max;
-    });
-  }, [sets, selectedPriceFilter]);
 
   if (isLoading) {
     return (
@@ -78,42 +54,14 @@ const CollectionDetail = () => {
             </p>
           </motion.div>
 
-          {/* Price Filter */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="mb-8 p-4 luxury-card max-w-2xl mx-auto"
-          >
-            <div className="flex items-center gap-2 mb-3 justify-center">
-              <Filter className="w-4 h-4 text-primary" />
-              <h3 className="font-serif text-lg text-foreground">Filter by Price</h3>
-            </div>
-            <div className="flex flex-wrap gap-2 justify-center">
-              {priceFilterOptions.map((filter) => (
-                <button
-                  key={filter.id}
-                  onClick={() => setSelectedPriceFilter(filter.id)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                    selectedPriceFilter === filter.id
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-card/60 text-foreground border border-border/50 hover:border-primary/50"
-                  }`}
-                >
-                  {filter.name}
-                </button>
-              ))}
-            </div>
-          </motion.div>
-
           {/* Results count */}
           <p className="text-center text-muted-foreground text-sm mb-8">
-            Showing {filteredSets.length} {filteredSets.length === 1 ? "design" : "designs"}
+            {sets?.length || 0} {(sets?.length || 0) === 1 ? "design" : "designs"}
           </p>
 
           {/* Products Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredSets.map((set, index) => (
+            {sets?.map((set, index) => (
               <motion.div
                 key={set.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -153,17 +101,11 @@ const CollectionDetail = () => {
           </div>
 
           {/* No results */}
-          {filteredSets.length === 0 && (
+          {(!sets || sets.length === 0) && (
             <div className="text-center py-12">
-              <p className="text-muted-foreground mb-4">
-                No designs found in this price range.
+              <p className="text-muted-foreground">
+                No designs found in this collection.
               </p>
-              <button
-                onClick={() => setSelectedPriceFilter("all")}
-                className="text-primary hover:underline"
-              >
-                Clear filter
-              </button>
             </div>
           )}
         </div>
