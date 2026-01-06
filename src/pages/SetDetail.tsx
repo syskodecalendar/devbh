@@ -10,6 +10,7 @@ import {
   ArrowLeft,
   Play,
   Maximize2,
+  Filter,
 } from "lucide-react";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,15 @@ import { useJewelrySetBySlug } from "@/hooks/useJewelrySets";
 import TryOnModal from "@/components/TryOnModal";
 import FullscreenGallery from "@/components/FullscreenGallery";
 import { getDemoMedia } from "@/lib/demoImages";
+
+// Price filter options
+const priceFilterOptions = [
+  { id: "all", name: "All Prices", min: 0, max: Infinity },
+  { id: "below-5000", name: "Below 5,000 BHD", min: 0, max: 5000 },
+  { id: "5000-10000", name: "5,000 - 10,000 BHD", min: 5000, max: 10000 },
+  { id: "10000-20000", name: "10,000 - 20,000 BHD", min: 10000, max: 20000 },
+  { id: "above-20000", name: "Above 20,000 BHD", min: 20000, max: Infinity },
+];
 
 // Diamond quality options
 const diamondQualityOptions = [
@@ -50,6 +60,7 @@ const SetDetail = () => {
   const [selectedDiamondQuality, setSelectedDiamondQuality] = useState<string>("vs-si");
   const [selectedMetalKarat, setSelectedMetalKarat] = useState<string>("18k");
   const [selectedMetalColor, setSelectedMetalColor] = useState<string>("yellow");
+  const [selectedPriceFilter, setSelectedPriceFilter] = useState<string>("all");
   const [tryOnModalOpen, setTryOnModalOpen] = useState(false);
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
   const [fullscreenIndex, setFullscreenIndex] = useState(0);
@@ -286,6 +297,29 @@ const SetDetail = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
+              {/* Price Filter */}
+              <div className="mb-6 p-4 luxury-card">
+                <div className="flex items-center gap-2 mb-3">
+                  <Filter className="w-4 h-4 text-primary" />
+                  <h3 className="font-serif text-lg text-foreground">Price Range</h3>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {priceFilterOptions.map((filter) => (
+                    <button
+                      key={filter.id}
+                      onClick={() => setSelectedPriceFilter(filter.id)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                        selectedPriceFilter === filter.id
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-card/60 text-foreground border border-border/50 hover:border-primary/50"
+                      }`}
+                    >
+                      {filter.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Title and Collection */}
               <div className="mb-6">
                 <span className="text-primary text-sm tracking-wider uppercase">
