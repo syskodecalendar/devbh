@@ -7,10 +7,16 @@ import maroonMajestyBracelet from "@/assets/jewelry/maroon-majesty-bracelet.jpg"
 import maroonMajestyVideo1 from "@/assets/jewelry/maroon-majesty-video1.mp4";
 import maroonMajestyVideo2 from "@/assets/jewelry/maroon-majesty-video2.mp4";
 
+// Metal color variant images
+import maroonMajestyWhiteGold from "@/assets/jewelry/maroon-majesty-white-gold.jpg";
+import maroonMajestyRoseGold from "@/assets/jewelry/maroon-majesty-rose-gold.jpg";
+import maroonMajestyYellowGold from "@/assets/jewelry/maroon-majesty-yellow-gold.jpg";
+
 export interface DemoMedia {
   coverImage: string;
   images: string[];
   videos: string[];
+  metalColorImages?: Record<string, string>;
 }
 
 // Map slugs to their demo media
@@ -24,6 +30,11 @@ export const demoMediaBySlug: Record<string, DemoMedia> = {
     coverImage: maroonMajestyNecklace,
     images: [maroonMajestyNecklace, maroonMajestyBracelet],
     videos: [maroonMajestyVideo1, maroonMajestyVideo2],
+    metalColorImages: {
+      white: maroonMajestyWhiteGold,
+      yellow: maroonMajestyYellowGold,
+      rose: maroonMajestyRoseGold,
+    },
   },
 };
 
@@ -34,4 +45,9 @@ export const getDemoMedia = (slug: string): DemoMedia | null => {
 export const getDemoCoverImage = (slug: string): string | null => {
   const media = demoMediaBySlug[slug];
   return media?.coverImage || null;
+};
+
+export const getDemoMetalColorImage = (slug: string, metalColor: string): string | null => {
+  const media = demoMediaBySlug[slug];
+  return media?.metalColorImages?.[metalColor] || null;
 };
