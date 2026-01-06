@@ -128,6 +128,7 @@ export type Database = {
           display_order: number | null
           id: string
           is_cover: boolean | null
+          metal_color: string | null
           set_id: string
           type: string
           url: string
@@ -138,6 +139,7 @@ export type Database = {
           display_order?: number | null
           id?: string
           is_cover?: boolean | null
+          metal_color?: string | null
           set_id: string
           type: string
           url: string
@@ -148,6 +150,7 @@ export type Database = {
           display_order?: number | null
           id?: string
           is_cover?: boolean | null
+          metal_color?: string | null
           set_id?: string
           type?: string
           url?: string

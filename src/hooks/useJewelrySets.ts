@@ -30,6 +30,7 @@ export interface JewelryMediaDB {
   alt_text: string | null;
   is_cover: boolean | null;
   display_order: number | null;
+  metal_color: string | null;
 }
 
 export interface CollectionDB {

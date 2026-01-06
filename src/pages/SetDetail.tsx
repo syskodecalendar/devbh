@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { useJewelrySetBySlug } from "@/hooks/useJewelrySets";
 import TryOnModal from "@/components/TryOnModal";
 import FullscreenGallery from "@/components/FullscreenGallery";
-import { getDemoMedia } from "@/lib/demoImages";
+import { getDemoMedia, getDemoMetalColorImage } from "@/lib/demoImages";
 
 // Diamond quality options - only 3
 const diamondQualityOptions = [
@@ -87,25 +87,49 @@ const SetDetail = () => {
   // Get demo media as fallback
   const demoMedia = getDemoMedia(set.slug);
 
-  // Add cover image first if exists
-  if (set.cover_image) {
+  // Check for metal color specific image from database
+  const metalColorImage = set.media?.find(
+    (m) => m.type === "image" && m.metal_color === selectedMetalColor
+  )?.url;
+
+  // Check for demo metal color image
+  const demoMetalColorImage = getDemoMetalColorImage(set.slug, selectedMetalColor);
+
+  // Add metal color specific image as the first image if available
+  if (metalColorImage) {
+    allImages.push(metalColorImage);
+  } else if (demoMetalColorImage) {
+    allImages.push(demoMetalColorImage);
+  }
+
+  // Add cover image if exists (and not already the metal color image)
+  if (set.cover_image && set.cover_image !== metalColorImage) {
     allImages.push(set.cover_image);
   }
 
-  // Add media items from database
+  // Add media items from database (excluding already added and metal-specific ones)
   if (set.media && set.media.length > 0) {
     set.media.forEach((m) => {
       if (m.type === "video") {
         allVideos.push(m.url);
-      } else if (m.type === "image" && m.url !== set.cover_image) {
+      } else if (
+        m.type === "image" && 
+        m.url !== set.cover_image && 
+        m.url !== metalColorImage &&
+        !m.metal_color // Exclude other metal color variants
+      ) {
         allImages.push(m.url);
       }
     });
   }
 
-  // If no images from database, use demo images
-  if (allImages.length === 0 && demoMedia) {
-    allImages.push(...demoMedia.images);
+  // If only one image (the metal color one), add demo images for more variety
+  if (allImages.length <= 1 && demoMedia) {
+    demoMedia.images.forEach((img) => {
+      if (!allImages.includes(img)) {
+        allImages.push(img);
+      }
+    });
   }
 
   // If no videos from database, use demo videos
