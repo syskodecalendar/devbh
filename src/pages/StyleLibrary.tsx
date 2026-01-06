@@ -5,67 +5,47 @@ import { ChevronLeft, ChevronRight, X, Pause, Play } from "lucide-react";
 import Header from "@/components/Header";
 import { useCollections } from "@/hooks/useJewelrySets";
 
-// Import generated AI images
+// Fallback images for collections without cover images
 import styleTraditional from "@/assets/jewelry/style-traditional.jpg";
 import styleContemporary from "@/assets/jewelry/style-contemporary.jpg";
 import styleRoyal from "@/assets/jewelry/style-royal.jpg";
 import styleMinimalist from "@/assets/jewelry/style-minimalist.jpg";
 import styleFusion from "@/assets/jewelry/style-fusion.jpg";
 
-// Style library categories with AI-generated diamond set images mapped to collections
-const styleLibraryImages = [
-  {
-    id: "diamond-luxe",
-    name: "Diamond Luxe",
-    description: "Premium diamond jewelry for the discerning connoisseur",
-    image: styleTraditional,
-    collectionSlug: "diamond-luxe",
-  },
-  {
-    id: "bridal-luxe",
-    name: "Bridal Luxe",
-    description: "Exquisite bridal sets for your special day",
-    image: styleContemporary,
-    collectionSlug: "bridal-luxe",
-  },
-  {
-    id: "temple-heritage",
-    name: "Temple Heritage",
-    description: "Traditional temple-inspired designs",
-    image: styleRoyal,
-    collectionSlug: "temple-heritage",
-  },
-  {
-    id: "contemporary-luxe",
-    name: "Contemporary Luxe",
-    description: "Modern luxury for the new-age bride",
-    image: styleMinimalist,
-    collectionSlug: "contemporary-luxe",
-  },
-  {
-    id: "pearl-collection",
-    name: "Pearl Collection",
-    description: "Timeless elegance with premium pearls",
-    image: styleFusion,
-    collectionSlug: "pearl-collection",
-  },
+const fallbackImages = [
+  styleTraditional,
+  styleContemporary,
+  styleRoyal,
+  styleMinimalist,
+  styleFusion,
 ];
 
-const AUTOPLAY_INTERVAL = 6000; // 6 seconds for Ken Burns effect
+const AUTOPLAY_INTERVAL = 6000;
 
 const StyleLibrary = () => {
   const navigate = useNavigate();
-  const { data: collections } = useCollections();
+  const { data: collections, isLoading } = useCollections();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
+  // Use collections from DB
+  const displayCollections = collections?.map((col, idx) => ({
+    id: col.id,
+    name: col.name,
+    description: col.short_description || col.description || "",
+    image: col.cover_image || fallbackImages[idx % fallbackImages.length],
+    slug: col.slug,
+  })) || [];
+
   const nextSlide = useCallback(() => {
-    setCurrentIndex((prev) => (prev + 1) % styleLibraryImages.length);
-  }, []);
+    if (displayCollections.length === 0) return;
+    setCurrentIndex((prev) => (prev + 1) % displayCollections.length);
+  }, [displayCollections.length]);
 
   const prevSlide = useCallback(() => {
-    setCurrentIndex((prev) => (prev - 1 + styleLibraryImages.length) % styleLibraryImages.length);
-  }, []);
+    if (displayCollections.length === 0) return;
+    setCurrentIndex((prev) => (prev - 1 + displayCollections.length) % displayCollections.length);
+  }, [displayCollections.length]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -76,8 +56,6 @@ const StyleLibrary = () => {
       } else if (e.key === "ArrowRight") {
         nextSlide();
         setIsAutoPlaying(false);
-      } else if (e.key === "Enter" || e.key === " ") {
-        handleStyleClick();
       } else if (e.key === "Escape") {
         navigate("/");
       }
@@ -85,32 +63,43 @@ const StyleLibrary = () => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [nextSlide, prevSlide, navigate, currentIndex]);
+  }, [nextSlide, prevSlide, navigate]);
 
   // Autoplay slideshow
   useEffect(() => {
-    if (!isAutoPlaying) return;
+    if (!isAutoPlaying || displayCollections.length === 0) return;
 
     const interval = setInterval(() => {
       nextSlide();
     }, AUTOPLAY_INTERVAL);
 
     return () => clearInterval(interval);
-  }, [isAutoPlaying, nextSlide]);
-
-  const handleStyleClick = () => {
-    const currentStyle = styleLibraryImages[currentIndex];
-    navigate(`/collections/${currentStyle.collectionSlug}`);
-  };
+  }, [isAutoPlaying, nextSlide, displayCollections.length]);
 
   const toggleAutoPlay = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsAutoPlaying(!isAutoPlaying);
   };
 
-  const currentStyle = styleLibraryImages[currentIndex];
+  if (isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-velvet">
+        <div className="text-foreground">Loading collections...</div>
+      </div>
+    );
+  }
 
-  // Ken Burns animation variants - alternating zoom directions
+  if (displayCollections.length === 0) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-velvet">
+        <div className="text-foreground">No collections available</div>
+      </div>
+    );
+  }
+
+  const currentCollection = displayCollections[currentIndex];
+
+  // Ken Burns animation variants
   const kenBurnsVariants = [
     { initial: { scale: 1, x: 0, y: 0 }, animate: { scale: 1.15, x: -30, y: -20 } },
     { initial: { scale: 1.1, x: 20, y: 0 }, animate: { scale: 1, x: -20, y: 10 } },
@@ -125,7 +114,7 @@ const StyleLibrary = () => {
     <div className="h-screen overflow-hidden bg-velvet">
       <Header />
 
-      {/* Fullscreen Carousel */}
+      {/* Fullscreen Carousel - No navigation on click */}
       <div className="relative h-screen w-full overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.div
@@ -134,13 +123,12 @@ const StyleLibrary = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.8 }}
-            className="absolute inset-0 cursor-pointer"
-            onClick={handleStyleClick}
+            className="absolute inset-0"
           >
             {/* Background Image with Ken Burns Effect */}
             <motion.img
-              src={currentStyle.image}
-              alt={currentStyle.name}
+              src={currentCollection.image}
+              alt={currentCollection.name}
               className="w-full h-full object-cover"
               initial={currentKenBurns.initial}
               animate={currentKenBurns.animate}
@@ -161,16 +149,13 @@ const StyleLibrary = () => {
                 transition={{ delay: 0.3, duration: 0.5 }}
               >
                 <span className="text-primary text-sm tracking-[0.3em] uppercase font-medium mb-4 block">
-                  Collection {currentIndex + 1} of {styleLibraryImages.length}
+                  Collection {currentIndex + 1} of {displayCollections.length}
                 </span>
                 <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl text-foreground mb-4">
-                  {currentStyle.name}
+                  {currentCollection.name}
                 </h1>
                 <p className="text-foreground/80 text-lg md:text-xl max-w-xl mx-auto">
-                  {currentStyle.description}
-                </p>
-                <p className="text-primary/80 text-sm mt-6 animate-pulse">
-                  Click to explore collection
+                  {currentCollection.description}
                 </p>
               </motion.div>
             </div>
@@ -193,7 +178,7 @@ const StyleLibrary = () => {
 
         {/* Slide Indicators with Progress */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-3 items-center">
-          {styleLibraryImages.map((_, idx) => (
+          {displayCollections.map((_, idx) => (
             <button
               key={idx}
               onClick={(e) => { e.stopPropagation(); setCurrentIndex(idx); setIsAutoPlaying(false); }}
@@ -236,9 +221,9 @@ const StyleLibrary = () => {
           <X className="w-5 h-5" />
         </button>
 
-        {/* Keyboard hints (for TV display) */}
+        {/* Keyboard hints */}
         <div className="absolute bottom-8 left-8 z-20 text-foreground/50 text-xs hidden md:block">
-          <span>← → Navigate</span> · <span>Enter to View</span> · <span>Esc to Exit</span>
+          <span>← → Navigate</span> · <span>Esc to Exit</span>
         </div>
       </div>
     </div>
