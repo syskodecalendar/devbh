@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, X, Pause, Play } from "lucide-react";
 import Header from "@/components/Header";
-import { useJewelrySets } from "@/hooks/useJewelrySets";
+import { useCollections } from "@/hooks/useJewelrySets";
 
 // Import generated AI images
 import styleTraditional from "@/assets/jewelry/style-traditional.jpg";
@@ -12,37 +12,42 @@ import styleRoyal from "@/assets/jewelry/style-royal.jpg";
 import styleMinimalist from "@/assets/jewelry/style-minimalist.jpg";
 import styleFusion from "@/assets/jewelry/style-fusion.jpg";
 
-// Style library categories with AI-generated diamond set images
+// Style library categories with AI-generated diamond set images mapped to collections
 const styleLibraryImages = [
   {
-    id: "traditional",
-    name: "Classic Brilliance",
-    description: "Timeless diamond designs for the elegant bride",
+    id: "diamond-luxe",
+    name: "Diamond Luxe",
+    description: "Premium diamond jewelry for the discerning connoisseur",
     image: styleTraditional,
+    collectionSlug: "diamond-luxe",
   },
   {
-    id: "contemporary",
-    name: "Modern Luxe",
-    description: "Contemporary diamond statements for the new-age bride",
+    id: "bridal-luxe",
+    name: "Bridal Luxe",
+    description: "Exquisite bridal sets for your special day",
     image: styleContemporary,
+    collectionSlug: "bridal-luxe",
   },
   {
-    id: "royal",
-    name: "Royal Radiance",
-    description: "Majestic diamond sets fit for royalty",
+    id: "temple-heritage",
+    name: "Temple Heritage",
+    description: "Traditional temple-inspired designs",
     image: styleRoyal,
+    collectionSlug: "temple-heritage",
   },
   {
-    id: "minimalist",
-    name: "Pure Elegance",
-    description: "Understated diamond beauty in simplicity",
+    id: "contemporary-luxe",
+    name: "Contemporary Luxe",
+    description: "Modern luxury for the new-age bride",
     image: styleMinimalist,
+    collectionSlug: "contemporary-luxe",
   },
   {
-    id: "fusion",
-    name: "Diamond Symphony",
-    description: "Harmonious diamond collections for every occasion",
+    id: "pearl-collection",
+    name: "Pearl Collection",
+    description: "Timeless elegance with premium pearls",
     image: styleFusion,
+    collectionSlug: "pearl-collection",
   },
 ];
 
@@ -50,7 +55,7 @@ const AUTOPLAY_INTERVAL = 6000; // 6 seconds for Ken Burns effect
 
 const StyleLibrary = () => {
   const navigate = useNavigate();
-  const { data: jewelrySets } = useJewelrySets();
+  const { data: collections } = useCollections();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
@@ -94,10 +99,8 @@ const StyleLibrary = () => {
   }, [isAutoPlaying, nextSlide]);
 
   const handleStyleClick = () => {
-    if (jewelrySets && jewelrySets.length > 0) {
-      const setIndex = currentIndex % jewelrySets.length;
-      navigate(`/set/${jewelrySets[setIndex].slug}`);
-    }
+    const currentStyle = styleLibraryImages[currentIndex];
+    navigate(`/collections/${currentStyle.collectionSlug}`);
   };
 
   const toggleAutoPlay = (e: React.MouseEvent) => {
@@ -158,7 +161,7 @@ const StyleLibrary = () => {
                 transition={{ delay: 0.3, duration: 0.5 }}
               >
                 <span className="text-primary text-sm tracking-[0.3em] uppercase font-medium mb-4 block">
-                  Style {currentIndex + 1} of {styleLibraryImages.length}
+                  Collection {currentIndex + 1} of {styleLibraryImages.length}
                 </span>
                 <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl text-foreground mb-4">
                   {currentStyle.name}
@@ -167,7 +170,7 @@ const StyleLibrary = () => {
                   {currentStyle.description}
                 </p>
                 <p className="text-primary/80 text-sm mt-6 animate-pulse">
-                  Click to explore designs
+                  Click to explore collection
                 </p>
               </motion.div>
             </div>
