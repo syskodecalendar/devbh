@@ -10,15 +10,30 @@ import {
 } from "lucide-react";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
-import { useJewelrySetBySlug, useDiamondQualities } from "@/hooks/useJewelrySets";
+import { useJewelrySetBySlug } from "@/hooks/useJewelrySets";
 import TryOnModal from "@/components/TryOnModal";
 import FullscreenGallery from "@/components/FullscreenGallery";
 import { getDemoMedia } from "@/lib/demoImages";
 
+// Diamond quality options - only 3
+const diamondQualityOptions = [
+  { id: "vs-si", name: "VS-SI" },
+  { id: "si", name: "SI" },
+  { id: "si-i", name: "SI-I" },
+];
+
+// Price range filter options
+const priceRangeOptions = [
+  { id: "all", name: "All" },
+  { id: "below-10k", name: "<10K" },
+  { id: "10k-20k", name: "10-20K" },
+  { id: "above-20k", name: ">20K" },
+];
+
 // Metal karat options
 const metalKaratOptions = [
-  { id: "18k", name: "18K", description: "75% Pure Gold", multiplier: 1 },
-  { id: "14k", name: "14K", description: "58.3% Pure Gold", multiplier: 0.85 },
+  { id: "18k", name: "18K", multiplier: 1 },
+  { id: "14k", name: "14K", multiplier: 0.85 },
 ];
 
 // Metal color options
@@ -32,20 +47,15 @@ const SetDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: set, isLoading } = useJewelrySetBySlug(id || "");
-  const { data: diamondQualities } = useDiamondQualities();
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [selectedDiamondQuality, setSelectedDiamondQuality] = useState<string>("");
+  const [selectedDiamondQuality, setSelectedDiamondQuality] = useState<string>("vs-si");
+  const [selectedPriceRange, setSelectedPriceRange] = useState<string>("all");
   const [selectedMetalKarat, setSelectedMetalKarat] = useState<string>("18k");
   const [selectedMetalColor, setSelectedMetalColor] = useState<string>("yellow");
   const [tryOnModalOpen, setTryOnModalOpen] = useState(false);
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
   const [fullscreenIndex, setFullscreenIndex] = useState(0);
-
-  // Set default diamond quality when data loads
-  if (diamondQualities && diamondQualities.length > 0 && !selectedDiamondQuality) {
-    setSelectedDiamondQuality(diamondQualities[0].code);
-  }
 
   if (isLoading) {
     return (
@@ -118,11 +128,11 @@ const SetDetail = () => {
       basePrice = basePrice * karatOption.multiplier;
     }
     
-    // Adjust for diamond quality from database
-    const diamondQuality = diamondQualities?.find(d => d.code === selectedDiamondQuality);
-    if (diamondQuality && set.has_diamond && set.diamond_price_per_carat) {
-      const multiplier = diamondQuality.price_multiplier || 1;
-      basePrice = basePrice + (set.diamond_price_per_carat * multiplier);
+    // Adjust for diamond quality
+    if (selectedDiamondQuality === "si") {
+      basePrice = basePrice * 0.95;
+    } else if (selectedDiamondQuality === "si-i") {
+      basePrice = basePrice * 0.90;
     }
     
     return Math.round(basePrice);
@@ -290,36 +300,52 @@ const SetDetail = () => {
                 <p className="text-muted-foreground mt-3">{set.description || set.short_description}</p>
               </div>
 
-              {/* Diamond Quality Selector - from database */}
-              {diamondQualities && diamondQualities.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="font-serif text-lg text-foreground mb-3">
-                    Diamond Quality
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {diamondQualities.map((quality) => (
+              {/* Diamond Quality & Price Range - Side by Side */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                {/* Diamond Quality */}
+                <div>
+                  <h3 className="text-sm text-muted-foreground mb-2">Diamond Quality</h3>
+                  <div className="flex gap-1">
+                    {diamondQualityOptions.map((quality) => (
                       <button
                         key={quality.id}
-                        onClick={() => setSelectedDiamondQuality(quality.code)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                          selectedDiamondQuality === quality.code
+                        onClick={() => setSelectedDiamondQuality(quality.id)}
+                        className={`px-3 py-1.5 rounded text-xs font-medium transition-all ${
+                          selectedDiamondQuality === quality.id
                             ? "bg-primary text-primary-foreground"
                             : "bg-card/60 text-foreground border border-border/50 hover:border-primary/50"
                         }`}
-                        title={quality.description || ""}
                       >
                         {quality.name}
                       </button>
                     ))}
                   </div>
                 </div>
-              )}
+
+                {/* Price Range */}
+                <div>
+                  <h3 className="text-sm text-muted-foreground mb-2">Price Range</h3>
+                  <div className="flex gap-1">
+                    {priceRangeOptions.map((range) => (
+                      <button
+                        key={range.id}
+                        onClick={() => setSelectedPriceRange(range.id)}
+                        className={`px-2 py-1.5 rounded text-xs font-medium transition-all ${
+                          selectedPriceRange === range.id
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-card/60 text-foreground border border-border/50 hover:border-primary/50"
+                        }`}
+                      >
+                        {range.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
 
               {/* Metal Karat Selector */}
               <div className="mb-6">
-                <h3 className="font-serif text-lg text-foreground mb-3">
-                  Metal Karat
-                </h3>
+                <h3 className="text-sm text-muted-foreground mb-2">Metal Karat</h3>
                 <div className="flex gap-2">
                   {metalKaratOptions.map((karat) => (
                     <button
@@ -330,7 +356,6 @@ const SetDetail = () => {
                           ? "bg-primary text-primary-foreground"
                           : "bg-card/60 text-foreground border border-border/50 hover:border-primary/50"
                       }`}
-                      title={karat.description}
                     >
                       {karat.name}
                     </button>
@@ -340,9 +365,7 @@ const SetDetail = () => {
 
               {/* Metal Color Selector */}
               <div className="mb-8">
-                <h3 className="font-serif text-lg text-foreground mb-3">
-                  Metal Color
-                </h3>
+                <h3 className="text-sm text-muted-foreground mb-2">Metal Color</h3>
                 <div className="flex gap-3">
                   {metalColorOptions.map((color) => (
                     <button
